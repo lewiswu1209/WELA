@@ -1,0 +1,6 @@
+openai
+pyaudio
+keyboard
+curl_cffi
+modelscope
+sentence_transformers
