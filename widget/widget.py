@@ -24,6 +24,7 @@ from PyQt5.QtWidgets import QSystemTrayIcon
 
 from meta import Meta
 from models import OpenAIChat
+from toolkit import Quit
 from toolkit import Toolkit
 from toolkit import Browser
 from toolkit import Definition
@@ -118,7 +119,7 @@ class Widget(QWidget):
             memory = QdrantMemory(memory_key="memory", qdrant_client=qdrant_client)
         else:
             memory = None
-        toolkit = Toolkit([Definition(proxies), DuckDuckGo(proxies), Browser()], self.__conversation_thread)
+        toolkit = Toolkit([Quit(), Definition(proxies), DuckDuckGo(proxies), Browser()], self.__conversation_thread)
         model = OpenAIChat(stream=True, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
         meta = Meta(model=model, prompt=config.get("prompt"),memory=memory, toolkit=toolkit)
         self.__conversation_thread.set_meta(meta)
@@ -205,6 +206,7 @@ class Widget(QWidget):
 
     def __conversation(self, text: str) -> None:
         self.__conversation_thread.set_text(text)
+        self.__conversation_thread.agent_require_quit.connect(self.close)
         self.__conversation_thread.conversation_started.connect(self.__on_conversation_started)
         self.__conversation_thread.conversation_changed.connect(self.__on_conversation_changed)
         self.__conversation_thread.start()

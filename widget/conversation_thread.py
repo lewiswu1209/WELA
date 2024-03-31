@@ -10,6 +10,7 @@ class ConversationThread(QThread, ToolCallback):
 
     conversation_started = pyqtSignal()
     conversation_changed = pyqtSignal(str)
+    agent_require_quit = pyqtSignal()
 
     def set_text(self, text: str) -> None:
         self.text = text
@@ -30,6 +31,8 @@ class ConversationThread(QThread, ToolCallback):
             self.conversation_changed.emit("正在查找\"{}\"的定义".format(event.arguments.get("english_keywords")))
         elif event.tool_name == "browser":
             self.conversation_changed.emit("正在浏览网页:{}".format(event.arguments.get("url")))
+        elif event.tool_name =="quit":
+            self.agent_require_quit.emit()
         else:
             self.conversation_changed.emit("准备使用工具:{}\n参数:{}\n".format(event.tool_name, event.arguments))
 
