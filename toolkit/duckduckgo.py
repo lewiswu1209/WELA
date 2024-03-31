@@ -2,7 +2,6 @@
 import json
 
 from typing import Any
-from typing import List
 from typing import Dict
 from itertools import islice
 from duckduckgo_search import DDGS

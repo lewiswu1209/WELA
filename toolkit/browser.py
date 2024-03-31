@@ -5,6 +5,7 @@ from typing import Any
 from typing import List
 from htmlmin import minify
 from curl_cffi import requests
+
 from toolkit import Tool
 
 def extract_blank_tags(tag: element.Tag) -> None:

@@ -2,6 +2,8 @@
 import os
 import yaml
 import random
+import markdown
+import webbrowser
 
 from datetime import datetime
 from PyQt5.QtGui import QFont
@@ -10,20 +12,22 @@ from PyQt5.QtGui import QMovie
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtGui import QMouseEvent
 from PyQt5.QtCore import Qt
+from PyQt5.QtCore import QUrl
 from PyQt5.QtCore import QSize
 from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QMenu
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtWidgets import QAction
 from PyQt5.QtWidgets import QWidget
-from PyQt5.QtWidgets import QTextEdit
 from PyQt5.QtWidgets import QVBoxLayout
+from PyQt5.QtWidgets import QTextBrowser
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtWidgets import QInputDialog
 from PyQt5.QtWidgets import QSystemTrayIcon
 
 from meta import Meta
 from models import OpenAIChat
+from toolkit import Quit
 from toolkit import Toolkit
 from toolkit import Browser
 from toolkit import Definition
@@ -42,17 +46,22 @@ class TextWidget(QWidget):
 
         self.setLayout(QVBoxLayout())
 
-        self.__text_edit = QTextEdit(self)
+        self.__text_edit = QTextBrowser(self)
         self.__text_edit.setReadOnly(True)
+        self.__text_edit.setOpenLinks(False)
         self.__text_edit.setFont(QFont("微软雅黑", 12))
-        self.__text_edit.setLineWrapMode(QTextEdit.NoWrap)
+        self.__text_edit.setLineWrapMode(QTextBrowser.NoWrap)
         self.__text_edit.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.__text_edit.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.__text_edit.document().contentsChanged.connect(self.__on_contents_changed)
+        self.__text_edit.anchorClicked.connect(self.__on_link_clicked)
 
         self.layout().addWidget(self.__text_edit)
 
         self.__is_max_width = False
+
+    def __on_link_clicked(self, url: QUrl) -> None:
+        webbrowser.open(url.toString())
 
     def __on_contents_changed(self) -> None:
         desktop_height = QApplication.desktop().availableGeometry().height()
@@ -70,7 +79,7 @@ class TextWidget(QWidget):
         else:
             self.__text_edit.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         if document_width > desktop_width / 3 or self.__is_max_width:
-            self.__text_edit.setLineWrapMode(QTextEdit.WidgetWidth)
+            self.__text_edit.setLineWrapMode(QTextBrowser.WidgetWidth)
             fixed_width = desktop_width /3
             fixed_height += 15
             self.__is_max_width = True
@@ -83,11 +92,12 @@ class TextWidget(QWidget):
         self.setFixedWidth(int(fixed_width) + self.layout().spacing() * 4)
 
     def set_text(self, text: str) -> None:
-        self.__text_edit.setText(text)
+        html = markdown.markdown(text)
+        self.__text_edit.setHtml(html)
 
     def reset(self) -> None:
         self.__is_max_width = False
-        self.__text_edit.setLineWrapMode(QTextEdit.NoWrap)
+        self.__text_edit.setLineWrapMode(QTextBrowser.NoWrap)
 
 class Widget(QWidget):
 
@@ -118,7 +128,7 @@ class Widget(QWidget):
             memory = QdrantMemory(memory_key="memory", qdrant_client=qdrant_client)
         else:
             memory = None
-        toolkit = Toolkit([Definition(proxies), DuckDuckGo(proxies), Browser()], self.__conversation_thread)
+        toolkit = Toolkit([Quit(), Definition(proxies), DuckDuckGo(proxies), Browser()], self.__conversation_thread)
         model = OpenAIChat(stream=True, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
         meta = Meta(model=model, prompt=config.get("prompt"),memory=memory, toolkit=toolkit)
         self.__conversation_thread.set_meta(meta)
@@ -205,6 +215,7 @@ class Widget(QWidget):
 
     def __conversation(self, text: str) -> None:
         self.__conversation_thread.set_text(text)
+        self.__conversation_thread.agent_require_quit.connect(self.close)
         self.__conversation_thread.conversation_started.connect(self.__on_conversation_started)
         self.__conversation_thread.conversation_changed.connect(self.__on_conversation_changed)
         self.__conversation_thread.start()
