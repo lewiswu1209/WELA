@@ -1,6 +1,8 @@
 openai
 pyaudio
 keyboard
+markdown
 curl_cffi
 modelscope
+duckduckgo_search
 sentence_transformers
