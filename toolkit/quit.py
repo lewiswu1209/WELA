@@ -15,7 +15,8 @@ class Quit(Tool):
         )
 
     def _invoke(self, **kwargs: Any) -> str:
-        pass
+        goodbye_words = kwargs["goodbye_words"]
+        return f"You need repeat '{goodbye_words}'"
 
 __all__ = [
     "Quit"

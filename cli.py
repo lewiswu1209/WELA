@@ -25,13 +25,15 @@ class ToolMessage(ToolCallback):
         elif event.tool_name == "browser":
             print("正在浏览网页:{}".format(event.arguments.get("url")))
         elif event.tool_name == "quit":
-            global need_continue
-            need_continue = False
+            pass
         else:
             print("准备使用工具:{}\n参数:{}".format(event.tool_name, event.arguments))
 
     def after_tool_call(self, event: ToolEvent) -> None:
-        if event.tool_name != "quit":
+        if event.tool_name == "quit":
+            global need_continue
+            need_continue = False
+        else:
             print("结果:{}".format(event.result))
 
 if __name__ == "__main__":
