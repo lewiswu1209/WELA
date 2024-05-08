@@ -13,6 +13,7 @@ class ConversationThread(QThread, ToolCallback):
 
     conversation_started = pyqtSignal()
     conversation_changed = pyqtSignal(str)
+    conversation_finished= pyqtSignal()
     agent_require_quit = pyqtSignal()
 
     def __init__(self, parent: QObject = None) -> None:
@@ -30,6 +31,7 @@ class ConversationThread(QThread, ToolCallback):
         response = self.meta.run(self.text)
         for token in response:
             self.conversation_changed.emit(token)
+        self.conversation_finished.emit()
         if self.__need_quit:
             time.sleep(2)
             self.agent_require_quit.emit()
