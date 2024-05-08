@@ -145,21 +145,12 @@ class Widget(QWidget):
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
 
         self.__label: QLabel = QLabel(self)
-        if 0 <= datetime.now().hour <= 5:
-            folder_path = "res/sleep"
-        else:
-            folder_path = "res/normal"
-        files = os.listdir(folder_path)
-        file = os.path.join(folder_path, random.choice(files))
-        pixmap = QPixmap(file)
-        width = 200
-        height = int(width * pixmap.height() / pixmap.width())
-        movie = QMovie(file)
-        movie.setScaledSize(QSize(width, height))
-        movie.start()
-        self.__label.setMovie(movie)
         self.layout().addWidget(self.__label)
-        self.resize(self.__label.size())
+
+        if 0 <= datetime.now().hour <= 5:
+            self.__change_status(status="sleeping")
+        else:
+            self.__change_status(status="normal")
 
         exit_action = QAction("退出", self)
         exit_action.triggered.connect(self.close)
@@ -180,6 +171,19 @@ class Widget(QWidget):
         new_pos.setX(desktop_geometry.right() - self.width())
         new_pos.setY(desktop_geometry.bottom() - self.height())
         self.move(new_pos)
+
+    def __change_status(self, status = "normal"):
+        folder_path = f"res/{status}"
+        files = os.listdir(folder_path)
+        file = os.path.join(folder_path, random.choice(files))
+        pixmap = QPixmap(file)
+        width = 200
+        height = int(width * pixmap.height() / pixmap.width())
+        movie = QMovie(file)
+        movie.setScaledSize(QSize(width, height))
+        movie.start()
+        self.__label.setMovie(movie)
+        self.resize(self.__label.size())
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.LeftButton:
@@ -218,6 +222,7 @@ class Widget(QWidget):
         self.__conversation_thread.agent_require_quit.connect(self.close)
         self.__conversation_thread.conversation_started.connect(self.__on_conversation_started)
         self.__conversation_thread.conversation_changed.connect(self.__on_conversation_changed)
+        self.__conversation_thread.conversation_finished.connect(self.__on_conversation_finished)
         self.__conversation_thread.start()
 
     def closeEvent(self, _) -> None:
@@ -227,6 +232,7 @@ class Widget(QWidget):
 
     def __on_conversation_started(self) -> None:
         self.__text_widget.reset()
+        self.__change_status(status="working")
         self.__on_conversation_changed("对方正在输入……")
 
     def __on_conversation_changed(self, text: str) -> None:
@@ -243,3 +249,9 @@ class Widget(QWidget):
         else:
             y = self.y() + self.height()
         self.__text_widget.move(QPoint(x, y))
+
+    def __on_conversation_finished(self) -> None:
+        if 0 <= datetime.now().hour <= 5:
+            self.__change_status(status="sleeping")
+        else:
+            self.__change_status(status="normal")
