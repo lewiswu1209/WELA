@@ -4,7 +4,7 @@ from typing import Dict
 from itertools import islice
 from duckduckgo_search import DDGS
 
-from toolkit import Tool
+from toolkit.toolkit import Tool
 
 class Definition(Tool):
     def __init__(self, proxies: Dict[str, Any] = None) -> None:

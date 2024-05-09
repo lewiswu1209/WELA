@@ -1,7 +1,7 @@
 
 from typing import List
 
-from agents import Agent
+from agents.agent import Agent
 from schema.message import AIMessage
 
 class SimpleSequentialAgent(Agent):

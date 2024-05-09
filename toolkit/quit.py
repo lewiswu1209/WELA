@@ -1,6 +1,6 @@
 
 from typing import Any
-from toolkit import Tool
+from toolkit.toolkit import Tool
 
 class Quit(Tool):
     def __init__(self) -> None:

@@ -27,12 +27,12 @@ from PyQt5.QtWidgets import QSystemTrayIcon
 
 from meta import Meta
 from models import OpenAIChat
+from memory import WindowQdrantMemory
 from toolkit import Quit
 from toolkit import Toolkit
 from toolkit import Browser
 from toolkit import Definition
 from toolkit import DuckDuckGo
-from memory import QdrantMemory
 from qdrant_client import QdrantClient
 from widget.conversation_thread import ConversationThread
 from widget.speech_recognition_thread import SpeechRecognitionThread
@@ -113,19 +113,30 @@ class Widget(QWidget):
             }
         else:
             proxies = None
-        if config.get("qdrant", None):
-            if config.get("qdrant").get("type") == "cloud":
+        if config.get("memory", None):
+            memory_key = config.get("memory").get("memory_key", "memory")
+            limit = config.get("memory").get("limit", 15)
+            window_size = config.get("memory").get("window_size", 5)
+            score_threshold = config.get("memory").get("score_threshold", 0.6)
+            if config.get("memory").get("qdrant").get("type") == "cloud":
                 qdrant_client = QdrantClient(
-                    url=config.get("qdrant", None).get("url"),
-                    api_key=config.get("qdrant", None).get("api_key")
+                    url=config.get("memory").get("qdrant").get("url"),
+                    api_key=config.get("memory").get("qdrant").get("api_key")
                 )
-            elif config.get("qdrant").get("type") == "local":
+            elif config.get("memory").get("qdrant").get("type") == "local":
                 qdrant_client = QdrantClient(
-                    path=config.get("qdrant", None).get("path")
+                    path=config.get("memory").get("qdrant").get("path")
                 )
             else:
                 qdrant_client = QdrantClient(":memory:")
-            memory = QdrantMemory(memory_key="memory", qdrant_client=qdrant_client)
+                
+            memory = WindowQdrantMemory(
+                memory_key=memory_key, 
+                qdrant_client=qdrant_client,
+                limit=limit,
+                window_size=window_size,
+                score_threshold=score_threshold
+            )
         else:
             memory = None
         toolkit = Toolkit([Quit(), Definition(proxies), DuckDuckGo(proxies), Browser()], self.__conversation_thread)

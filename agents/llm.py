@@ -8,9 +8,9 @@ from openai._types import NotGiven
 from openai._types import NOT_GIVEN
 from openai.types.chat.chat_completion_message_tool_call import ChatCompletionMessageToolCall
 
-from agents import Agent
 from models import OpenAIChat
 from toolkit import Toolkit
+from agents.agent import Agent
 from schema.message import AIMessage
 from schema.message import ToolMessage
 from prompts.messages_template import ChatTemplate

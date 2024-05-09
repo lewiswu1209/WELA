@@ -1,7 +1,7 @@
 
 from typing import List
 
-from memory import Memory
+from memory.memory import Memory
 from schema.message import Message
 
 class BufferMemory(Memory):
