@@ -1,11 +1,10 @@
 
 from torch import Tensor
 from numpy import ndarray
-from sentence_transformers import SentenceTransformer
-
 from typing import List
 from typing import Union
 from typing import Optional
+from sentence_transformers import SentenceTransformer
 
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance
@@ -14,7 +13,7 @@ from qdrant_client.models import VectorParams
 from qdrant_client.models import ExtendedPointId
 from qdrant_client.http.exceptions import UnexpectedResponse
 
-from memory import Memory
+from memory.memory import Memory
 from schema.message import Message
 
 def compare_point_id(point: PointStruct) -> ExtendedPointId:

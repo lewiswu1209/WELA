@@ -4,9 +4,9 @@ from typing import Generator
 from openai._types import NOT_GIVEN
 
 from memory import Memory
-from agents import LLMAgent
 from models import OpenAIChat
 from toolkit import Toolkit
+from agents.llm import LLMAgent
 from schema.message import AIMessage
 from schema.message import UserMessage
 from prompts.messages_template import ChatTemplate

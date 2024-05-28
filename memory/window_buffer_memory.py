@@ -1,6 +1,6 @@
 
-from memory import BufferMemory
 from schema.message import Message
+from memory.buffer_memory import BufferMemory
 
 class WindowBufferMemory(BufferMemory):
     def __init__(self, memory_key: str, window_size: int = 10) -> None:
