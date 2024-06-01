@@ -8,11 +8,11 @@ from openai._types import NotGiven
 from openai._types import NOT_GIVEN
 from openai.types.chat.chat_completion_message_tool_call import ChatCompletionMessageToolCall
 
-from models import OpenAIChat
-from toolkit import Toolkit
 from agents.agent import Agent
 from schema.message import AIMessage
 from schema.message import ToolMessage
+from toolkit.toolkit import Toolkit
+from models.openai_chat import OpenAIChat
 from prompts.messages_template import ChatTemplate
 
 class LLMAgent(Agent):
@@ -43,9 +43,9 @@ class LLMAgent(Agent):
                     response_message = self.__model.run(messages, stop=self.__stop, tools=self.__toolkit.to_tools_param())
                 if "tool_calls" in response_message:
                     tool_calls: List[ChatCompletionMessageToolCall] = response_message["tool_calls"]
+                    messages.append(response_message)
                     for tool_call in tool_calls:
                         tool_result = self.__toolkit.run(tool_call.function)
-                        messages.append(response_message)
                         messages.append(
                             ToolMessage(
                                 tool_call_id=tool_call.id,
@@ -74,9 +74,9 @@ class LLMAgent(Agent):
                     if not tool_calls:
                         break
                     else:
+                        messages.append(final_response_message)
                         for tool_call in tool_calls:
                             tool_result = self.__toolkit.run(tool_call.function)
-                            messages.append(final_response_message)
                             messages.append(
                                 ToolMessage(
                                     tool_call_id=tool_call.id,

@@ -6,6 +6,8 @@ import markdown
 import webbrowser
 
 from datetime import datetime
+from qdrant_client import QdrantClient
+
 from PyQt5.QtGui import QFont
 from PyQt5.QtGui import QIcon
 from PyQt5.QtGui import QMovie
@@ -25,15 +27,14 @@ from PyQt5.QtWidgets import QApplication
 from PyQt5.QtWidgets import QInputDialog
 from PyQt5.QtWidgets import QSystemTrayIcon
 
-from meta import Meta
-from models import OpenAIChat
-from memory import WindowQdrantMemory
-from toolkit import Quit
-from toolkit import Toolkit
-from toolkit import Browser
-from toolkit import Definition
-from toolkit import DuckDuckGo
-from qdrant_client import QdrantClient
+from meta.meta import Meta
+from models.openai_chat import OpenAIChat
+
+from toolkit.quit import Quit
+from toolkit.toolkit import Toolkit
+from toolkit.definition import Definition
+from toolkit.browsing.browsing import Browsing
+from memory.window_qdrant_memory import WindowQdrantMemory
 from widget.conversation_thread import ConversationThread
 from widget.speech_recognition_thread import SpeechRecognitionThread
 
@@ -139,9 +140,10 @@ class Widget(QWidget):
             )
         else:
             memory = None
-        toolkit = Toolkit([Quit(), Definition(proxies), DuckDuckGo(proxies), Browser()], self.__conversation_thread)
-        model = OpenAIChat(stream=True, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
-        meta = Meta(model=model, prompt=config.get("prompt"),memory=memory, toolkit=toolkit)
+        meta_model = OpenAIChat(stream=True, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
+        tool_model = OpenAIChat(stream=False, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
+        toolkit = Toolkit([Quit(), Definition(proxies), Browsing(tool_model, proxies)], self.__conversation_thread)
+        meta = Meta(model=meta_model, prompt=config.get("prompt"),memory=memory, toolkit=toolkit)
         self.__conversation_thread.set_meta(meta)
 
         self.__speech_recognition = SpeechRecognitionThread()
@@ -155,8 +157,7 @@ class Widget(QWidget):
         self.setAttribute(Qt.WA_TranslucentBackground, True)
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
 
-        self.__label: QLabel = QLabel(self)
-        self.layout().addWidget(self.__label)
+        self.__label: QLabel = None
 
         if 0 <= datetime.now().hour <= 5:
             self.__change_status(status="sleeping")
@@ -193,7 +194,12 @@ class Widget(QWidget):
         movie = QMovie(file)
         movie.setScaledSize(QSize(width, height))
         movie.start()
+
+        if self.__label:
+            self.layout().removeWidget(self.__label)
+        self.__label: QLabel = QLabel(self)
         self.__label.setMovie(movie)
+        self.layout().addWidget(self.__label)
         self.resize(self.__label.size())
 
     def mousePressEvent(self, event: QMouseEvent) -> None:

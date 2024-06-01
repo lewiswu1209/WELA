@@ -4,6 +4,7 @@ keyboard
 markdown
 curl_cffi
 modelscope
+trafilatura
 qdrant_client
 duckduckgo_search
 sentence_transformers
