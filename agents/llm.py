@@ -43,9 +43,9 @@ class LLMAgent(Agent):
                     response_message = self.__model.run(messages, stop=self.__stop, tools=self.__toolkit.to_tools_param())
                 if "tool_calls" in response_message:
                     tool_calls: List[ChatCompletionMessageToolCall] = response_message["tool_calls"]
+                    messages.append(response_message)
                     for tool_call in tool_calls:
                         tool_result = self.__toolkit.run(tool_call.function)
-                        messages.append(response_message)
                         messages.append(
                             ToolMessage(
                                 tool_call_id=tool_call.id,
@@ -74,9 +74,9 @@ class LLMAgent(Agent):
                     if not tool_calls:
                         break
                     else:
+                        messages.append(final_response_message)
                         for tool_call in tool_calls:
                             tool_result = self.__toolkit.run(tool_call.function)
-                            messages.append(final_response_message)
                             messages.append(
                                 ToolMessage(
                                     tool_call_id=tool_call.id,

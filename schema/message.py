@@ -47,7 +47,8 @@ class Message(Dict):
                     self["tool_calls"][index].type = choice.delta.tool_calls[index].type
                 if choice.delta.tool_calls[index].function.name:
                     self["tool_calls"][index].function.name = choice.delta.tool_calls[index].function.name
-                self["tool_calls"][index].function.arguments += choice.delta.tool_calls[index].function.arguments
+                if choice.delta.tool_calls[index].function.arguments:
+                    self["tool_calls"][index].function.arguments += choice.delta.tool_calls[index].function.arguments
 
     @classmethod
     def from_dict(cls, message_dict: Dict) -> "Message":
