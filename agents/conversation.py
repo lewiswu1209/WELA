@@ -3,12 +3,12 @@ from typing import Any
 from typing import Generator
 from openai._types import NOT_GIVEN
 
-from memory import Memory
-from models import OpenAIChat
-from toolkit import Toolkit
 from agents.llm import LLMAgent
+from memory.memory import Memory
 from schema.message import AIMessage
 from schema.message import UserMessage
+from toolkit.toolkit import Toolkit
+from models.openai_chat import OpenAIChat
 from prompts.messages_template import ChatTemplate
 
 class ConversationAgent(LLMAgent):

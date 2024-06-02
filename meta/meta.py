@@ -4,11 +4,11 @@ import time
 from typing import List
 from typing import Generator
 
-from memory import Memory
-from models import OpenAIChat
-from agents import ConversationAgent
-from toolkit import Toolkit
 from meta.prompt import default_prompt
+from memory.memory import Memory
+from models.openai_chat import OpenAIChat
+from toolkit.toolkit import Toolkit
+from agents.conversation import ConversationAgent
 from prompts.prompt_template import PromptTemplate
 from prompts.messages_template import ChatTemplate
 from prompts.messages_template import MessageTemplate

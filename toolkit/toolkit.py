@@ -8,8 +8,8 @@ from typing import List
 from typing import Dict
 from openai.types.chat.chat_completion_message_tool_call import Function
 
-from callback import ToolEvent
-from callback import ToolCallback
+from callback.event import ToolEvent
+from callback.callback import ToolCallback
 
 class Tool(ABC):
     def __init__(self, name: str, description: str, required: List[str], **properties: Any) -> None:

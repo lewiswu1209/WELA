@@ -1,5 +1,5 @@
 
-from callback import ToolEvent
+from callback.event import ToolEvent
 
 class Callback:
     pass
