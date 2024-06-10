@@ -22,8 +22,9 @@ class DuckDuckGo(Tool):
     def _invoke(self, **kwargs: Any) -> str:
         query = kwargs["query"]
         result = f"Here are the search results for '{query}'. If you need, you can click on the URL to explore further:\n\n"
+        proxy = self.__proxies["http"] if self.__proxies else None
         try:
-            with DDGS(proxies=self.__proxies) as ddgs:
+            with DDGS(proxy=proxy) as ddgs:
                 for r in ddgs.text(query, max_results=5):
                     title = r["title"]
                     href = r["href"]

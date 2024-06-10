@@ -7,10 +7,10 @@ from curl_cffi import requests
 
 from toolkit.toolkit import Tool
 from models.openai_chat import OpenAIChat
-from prompts.prompt_template import PromptTemplate
-from prompts.messages_template import ChatTemplate
-from prompts.messages_template import UserMessageTemplate
-from prompts.messages_template import SystemMessageTemplate
+from schema.template.openai_chat import ChatTemplate
+from schema.template.openai_chat import UserMessageTemplate
+from schema.template.openai_chat import SystemMessageTemplate
+from schema.template.prompt_template import PromptTemplate
 
 from agents.llm import LLMAgent
 
@@ -54,7 +54,7 @@ class WebBrowser(Tool):
             ]
             chat_template = ChatTemplate(message_template_list=message_template_list)
             agent = LLMAgent(model=self.__model, chat_template=chat_template)
-            ans = agent.run(question=question)
+            ans = agent.predict(question=question)["content"]
             return ans
 
         except Exception as e:

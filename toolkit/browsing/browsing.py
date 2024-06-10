@@ -11,15 +11,16 @@ from toolkit.toolkit import Tool
 from toolkit.toolkit import Toolkit
 from models.openai_chat import OpenAIChat
 
-from schema.message import AIMessage
-from schema.message_placeholder import MessagePlaceholder
+from schema.prompt.openai_chat import AIMessage
+from schema.template.openai_chat import MessagePlaceholder
+from toolkit.weather import Weather
 from toolkit.browsing.duckduckgo import DuckDuckGo
 from toolkit.browsing.web_browser import WebBrowser
-from prompts.prompt_template import PromptTemplate
-from prompts.messages_template import ChatTemplate
-from prompts.messages_template import MessageTemplate
-from prompts.messages_template import UserMessageTemplate
-from prompts.messages_template import SystemMessageTemplate
+from schema.template.prompt_template import PromptTemplate
+from schema.template.openai_chat import ChatTemplate
+from schema.template.openai_chat import MessageTemplate
+from schema.template.openai_chat import UserMessageTemplate
+from schema.template.openai_chat import SystemMessageTemplate
 
 class Browsing(Tool):
     def __init__(self, model: OpenAIChat, proxies: Dict[str, Any] = None, max_loop: int = 5) -> None:
@@ -33,7 +34,7 @@ class Browsing(Tool):
             }
         )
         self.__model: OpenAIChat = model
-        self.__toolkit: Toolkit = Toolkit([WebBrowser(self.__model, proxies), DuckDuckGo(proxies)])
+        self.__toolkit: Toolkit = Toolkit([Weather(), WebBrowser(self.__model, proxies), DuckDuckGo(proxies)])
         self.__max_loop: int = max_loop
 
     def __make_plan(self, problem: str):

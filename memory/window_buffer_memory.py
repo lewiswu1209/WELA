@@ -1,5 +1,5 @@
 
-from schema.message import Message
+from schema.prompt.openai_chat import Message
 from memory.buffer_memory import BufferMemory
 
 class WindowBufferMemory(BufferMemory):

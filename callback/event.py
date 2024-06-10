@@ -3,8 +3,7 @@ from typing import Any
 from typing import Dict
 
 class Event:
-    def __init__(self) -> None:
-        pass
+    pass
 
 class ToolEvent(Event):
     def __init__(self, tool_name: str, arguments: Dict[str, Any], result: str = None) -> None:
@@ -26,5 +25,6 @@ class ToolEvent(Event):
         return self.__result
 
 __all__ = [
+    "Event",
     "ToolEvent"
 ]

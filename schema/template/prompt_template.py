@@ -5,16 +5,20 @@ from typing import List
 from string import Formatter
 
 class PromptTemplate:
+    def format(self, **kwargs: Any) -> Any:
+        pass
+
+class StringPromptTemplate(PromptTemplate):
 
     def __init__(self, template: str) -> None:
         self.__template: str = template
 
-    def format(self, **kwargs: Any) -> str:
+    def format(self, **kwargs: Any) -> Any:
         if self.__template is None:
             return None
         return Formatter().format(self.__template, **kwargs)
 
-class FewShotPromptTemplate(PromptTemplate):
+class FewShotTemplate(StringPromptTemplate):
 
     def __init__(self, prefix: str="", suffix: str="", examples: List[Dict]=[], example_template: PromptTemplate="") -> None:
         template = prefix
@@ -26,5 +30,6 @@ class FewShotPromptTemplate(PromptTemplate):
 
 __all__ = [
     "PromptTemplate",
-    "FewShotPromptTemplate"
+    "StringPromptTemplate",
+    "FewShotTemplate"
 ]

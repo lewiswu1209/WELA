@@ -51,11 +51,9 @@ class SpeechRecognitionThread(QThread):
             self.__process_record_data()
 
     def __process_record_data(self) -> None:
-        file_name: str = None
         temp_file = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
         file_name = temp_file.name
-        temp_file.close()
-        wav_file = wave.open(file_name, "wb")
+        wav_file = wave.open(temp_file, "wb")
         wav_file.setnchannels(self.__channels)
         wav_file.setsampwidth(self.__sample_width)
         wav_file.setframerate(self.__sample_rate)
@@ -64,7 +62,6 @@ class SpeechRecognitionThread(QThread):
         res = self.__model.generate(input=file_name)
         text = res[0]["text"]
         self.record_completed.emit(text)
-        os.remove(file_name)
 
     def __record(self) -> None:
         self.__record_finished_signal.clear()
@@ -82,3 +79,7 @@ class SpeechRecognitionThread(QThread):
             stream.stop_stream()
             stream.close()
         self.__record_finished_signal.set()
+
+__all__ = [
+    "SpeechRecognitionThread"
+]

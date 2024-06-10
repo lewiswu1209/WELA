@@ -15,6 +15,7 @@ memory:
 openai:
   api_key: <your-api-key>
   base_url: https://api.openai.com/v1/
+  model_name: gpt-4o
 prompt: |
   You are Wela, a caring friend and confidant. You're here to help with anything you can.
 

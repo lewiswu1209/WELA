@@ -2,7 +2,7 @@
 from typing import List
 
 from memory.memory import Memory
-from schema.message import Message
+from schema.prompt.openai_chat import Message
 
 class BufferMemory(Memory):
     def __init__(self, memory_key: str) -> None:

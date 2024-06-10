@@ -1,13 +1,15 @@
 
 import time
 
+from typing import List
 from PyQt5.QtCore import QObject
 from PyQt5.QtCore import QThread
 from PyQt5.QtCore import pyqtSignal
 
-from meta.meta import Meta
+from agents.meta import Meta
 from callback.event import ToolEvent
 from callback.callback import ToolCallback
+from schema.prompt.openai_chat import Message
 
 class ConversationThread(QThread, ToolCallback):
 
@@ -20,17 +22,17 @@ class ConversationThread(QThread, ToolCallback):
         super().__init__(parent)
         self.__need_quit = False
 
-    def set_text(self, text: str) -> None:
-        self.text = text
+    def set_messages(self, messages: List[Message]) -> None:
+        self.__messages = messages
 
     def set_meta(self, meta: Meta) -> None:
         self.meta = meta
 
     def run(self) -> None:
         self.conversation_started.emit()
-        response = self.meta.run(self.text)
+        response = self.meta.predict(__input__=self.__messages)
         for token in response:
-            self.conversation_changed.emit(token)
+            self.conversation_changed.emit(token["content"])
         self.conversation_finished.emit()
         if self.__need_quit:
             time.sleep(2)
@@ -47,3 +49,7 @@ class ConversationThread(QThread, ToolCallback):
             self.__need_quit = True
         else:
             self.conversation_changed.emit("工具'{}'的结果:\n{}".format(event.tool_name, event.result))
+
+__all__ = [
+    "ConversationThread"
+]

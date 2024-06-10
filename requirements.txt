@@ -1,9 +1,12 @@
+PyQt5
+funasr
 openai
 pyaudio
 keyboard
 markdown
 curl_cffi
 modelscope
+torchaudio
 trafilatura
 qdrant_client
 duckduckgo_search
