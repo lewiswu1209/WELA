@@ -13,6 +13,7 @@ from models.openai_chat import OpenAIChat
 
 from schema.message import AIMessage
 from schema.message_placeholder import MessagePlaceholder
+from toolkit.weather import Weather
 from toolkit.browsing.duckduckgo import DuckDuckGo
 from toolkit.browsing.web_browser import WebBrowser
 from prompts.prompt_template import PromptTemplate
@@ -33,7 +34,7 @@ class Browsing(Tool):
             }
         )
         self.__model: OpenAIChat = model
-        self.__toolkit: Toolkit = Toolkit([WebBrowser(self.__model, proxies), DuckDuckGo(proxies)])
+        self.__toolkit: Toolkit = Toolkit([Weather(), WebBrowser(self.__model, proxies), DuckDuckGo(proxies)])
         self.__max_loop: int = max_loop
 
     def __make_plan(self, problem: str):

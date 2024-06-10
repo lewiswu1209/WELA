@@ -9,6 +9,7 @@ from memory.window_qdrant_memory import WindowQdrantMemory
 
 from toolkit.quit import Quit
 from toolkit.toolkit import Toolkit
+from toolkit.weather import Weather
 from toolkit.definition import Definition
 from toolkit.browsing.browsing import Browsing
 
@@ -70,7 +71,7 @@ if __name__ == "__main__":
         memory = None
     meta_model = OpenAIChat(stream=True, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
     tool_model = OpenAIChat(stream=False, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
-    toolkit = Toolkit([Quit(), Definition(proxies), Browsing(tool_model, proxies)], ToolMessage())
+    toolkit = Toolkit([Quit(), Weather(), Definition(proxies), Browsing(tool_model, proxies)], ToolMessage())
     meta_human = Meta(model=meta_model, prompt=config.get("prompt"),memory=memory, toolkit=toolkit)
     user_text = input("> ")
     while True:

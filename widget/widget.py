@@ -32,6 +32,7 @@ from models.openai_chat import OpenAIChat
 
 from toolkit.quit import Quit
 from toolkit.toolkit import Toolkit
+from toolkit.weather import Weather
 from toolkit.definition import Definition
 from toolkit.browsing.browsing import Browsing
 from memory.window_qdrant_memory import WindowQdrantMemory
@@ -142,7 +143,7 @@ class Widget(QWidget):
             memory = None
         meta_model = OpenAIChat(stream=True, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
         tool_model = OpenAIChat(stream=False, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
-        toolkit = Toolkit([Quit(), Definition(proxies), Browsing(tool_model, proxies)], self.__conversation_thread)
+        toolkit = Toolkit([Quit(), Weather(), Definition(proxies), Browsing(tool_model, proxies)], self.__conversation_thread)
         meta = Meta(model=meta_model, prompt=config.get("prompt"),memory=memory, toolkit=toolkit)
         self.__conversation_thread.set_meta(meta)
 
