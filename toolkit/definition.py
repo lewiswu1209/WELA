@@ -21,8 +21,9 @@ class Definition(Tool):
 
     def _invoke(self, **kwargs: Any) -> str:
         keyword = kwargs["keyword"]
+        proxy = self.__proxies["http"] if self.__proxies else None
         try:
-            with DDGS(proxies=self.__proxies) as ddgs:
+            with DDGS(proxy=proxy) as ddgs:
                 for r in islice(ddgs.answers(keyword), 1):
                     return r.get("text")
         except Exception as e:
