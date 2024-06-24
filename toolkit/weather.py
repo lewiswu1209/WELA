@@ -6,7 +6,7 @@ from typing import Any
 
 from toolkit.toolkit import Tool
 
-def convert_time_format(time_str):
+def convert_time_format(time_str: str) -> str:
     time_int = int(time_str)
     hours = time_int // 100
     minutes = time_int % 100

@@ -6,10 +6,10 @@ from abc import abstractmethod
 from typing import Any
 from typing import List
 from typing import Dict
-from openai.types.chat.chat_completion_message_tool_call import Function
 
 from callback.event import ToolEvent
 from callback.callback import ToolCallback
+from schema.prompt.openai_chat import Function
 
 class Tool(ABC):
     def __init__(self, name: str, description: str, required: List[str], **properties: Any) -> None:
@@ -48,14 +48,14 @@ class Toolkit(Dict[str, Tool]):
         self.__callback = callback
 
     def run(self, function: Function) -> str:
-        tool = self[function.name]
-        arguments = json.loads(function.arguments)
+        tool = self[function["name"]]
+        arguments = json.loads(function["arguments"])
         if self.__callback:
-            event = ToolEvent(function.name, arguments)
+            event = ToolEvent(function["name"], arguments)
             self.__callback.before_tool_call(event)
         result = tool.run(**arguments)
         if self.__callback:
-            event = ToolEvent(function.name, arguments, result)
+            event = ToolEvent(function["name"], arguments, result)
             self.__callback.after_tool_call(event)
         return result
 

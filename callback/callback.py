@@ -13,5 +13,6 @@ class ToolCallback(Callback):
         pass
 
 __all__ = [
+    "Callback",
     "ToolCallback"
 ]

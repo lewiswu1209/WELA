@@ -4,5 +4,5 @@ keyboard
 markdown
 curl_cffi
 modelscope
-duckduckgo_search==5.3.1b1
+duckduckgo_search
 sentence_transformers

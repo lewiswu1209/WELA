@@ -3,7 +3,7 @@ from abc import ABC
 from abc import abstractmethod
 from typing import List
 
-from schema.message import Message
+from schema.prompt.openai_chat import Message
 
 class Memory(ABC):
     def __init__(self, memory_key: str) -> None:

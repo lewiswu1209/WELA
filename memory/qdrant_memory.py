@@ -1,4 +1,5 @@
 
+from uuid import uuid4
 from torch import Tensor
 from numpy import ndarray
 from typing import List
@@ -15,7 +16,7 @@ from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.conversions.common_types import ScoredPoint
 
 from memory.memory import Memory
-from schema.message import Message
+from schema.prompt.openai_chat import Message
 
 def compare_scored_points_id(scored_point: ScoredPoint) -> ExtendedPointId:
     return scored_point.id
@@ -32,7 +33,7 @@ class QdrantMemory(Memory):
                 collection_name=self.memory_key,
                 vectors_config=VectorParams(size=384, distance=Distance.COSINE),
             )
-        except UnexpectedResponse as e:
+        except UnexpectedResponse as _:
             pass
         except ValueError:
             pass
@@ -41,29 +42,61 @@ class QdrantMemory(Memory):
         return self.__sentence_transformer.encode(text).tolist()
 
     def add_message(self, message: Message) -> None:
-        vector = [float(x) for x in self.__text2embedding(message["content"])]
-        id = self.__client.count(collection_name=self.memory_key).count + 1
-        self.__client.upsert(
-            collection_name=self.memory_key,
-            points=[
-                PointStruct(
-                    id=id,
-                    vector=vector,
-                    payload=message
-                )
-            ]
-        )
+        if isinstance(message["content"], str):
+            sentences = [message["content"]]
+        else:
+            sentences = []
+            for content in message["content"]:
+                if content["type"] == "text":
+                    sentences.append(content["text"])
+        payload={
+            "uuid": str(uuid4()),
+            "message": message
+        }
+        sentences_embedding = self.__text2embedding(sentences)
+        for sentence_embedding in sentences_embedding:
+            vector = [float(x) for x in sentence_embedding]
+            id = self.__client.count(collection_name=self.memory_key).count + 1
+            self.__client.upsert(
+                collection_name=self.memory_key,
+                points=[
+                    PointStruct(
+                        id=id,
+                        vector=vector,
+                        payload=payload
+                    )
+                ]
+            )
 
-    def get_messages(self, sentences: str) -> List[Message]:
-        sentences_vector = [float(x) for x in self.__text2embedding(sentences)]
-        hits = self.__client.search(
-            collection_name=self.memory_key,
-            query_vector=sentences_vector,
-            limit=self.__limit,
-            score_threshold = self.__score_threshold,
-        )
-        hits = sorted(hits, key=compare_scored_points_id)
-        return [Message.from_dict(hit.payload) for hit in hits]
+    def get_messages(self, message: Message) -> List[Message]:
+        if isinstance(message["content"], str):
+            sentences = [message["content"]]
+        else:
+            sentences = []
+            for content in message["content"]:
+                if content["type"] == "text":
+                    sentences.append(content["text"])
+
+        sentences_embedding = self.__text2embedding(sentences)
+        searched_scored_points: List[ScoredPoint] = []
+        for sentence_embedding in sentences_embedding:
+            vector = [float(x) for x in sentence_embedding]
+            scored_points = self.__client.search(
+                collection_name=self.memory_key,
+                query_vector=vector,
+                limit=self.__limit,
+                score_threshold = self.__score_threshold,
+            )
+            searched_scored_points.extend(scored_points)
+
+        seen_uuids = set()
+        unique_scored_points: List[ScoredPoint] = []
+        for searched_scored_point in searched_scored_points:
+            if searched_scored_point.payload["uuid"] not in seen_uuids:
+                seen_uuids.add(searched_scored_point.payload["uuid"])
+                unique_scored_points.append(searched_scored_point)
+        sorted_unique_scored_points = sorted(unique_scored_points, key=compare_scored_points_id)
+        return [scored_point.payload["message"] for scored_point in sorted_unique_scored_points]
 
 __all__ = [
     "QdrantMemory"
