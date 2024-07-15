@@ -48,15 +48,32 @@ class Toolkit(Dict[str, Tool]):
         self.__callback = callback
 
     def run(self, function: Function) -> str:
-        tool = self[function["name"]]
-        arguments = json.loads(function["arguments"])
+        tool_name = function.get("name")
+        arguments_str = function.get("arguments")
+
+        try:
+            arguments = json.loads(arguments_str)
+        except json.JSONDecodeError:
+            return "Error: Invalid JSON format for arguments."
+
+        if tool_name not in self:
+            return f"Error: Tool '{tool_name}' not found."
+
+        tool = self[tool_name]
+
         if self.__callback:
-            event = ToolEvent(function["name"], arguments)
+            event = ToolEvent(tool_name, arguments)
             self.__callback.before_tool_call(event)
-        result = tool.run(**arguments)
+
+        try:
+            result = tool.run(**arguments)
+        except Exception as e:
+            return f"Error: An error occurred while running the tool - {str(e)}"
+
         if self.__callback:
-            event = ToolEvent(function["name"], arguments, result)
+            event = ToolEvent(tool_name, arguments, result)
             self.__callback.after_tool_call(event)
+
         return result
 
     def to_tools_param(self) -> List[Dict[str, Any]]:
