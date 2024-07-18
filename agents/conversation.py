@@ -26,9 +26,7 @@ class ConversationAgent(LLMAgent):
 
     def predict(self, **kwargs: Any) -> Union[Message, Generator[Message, None, None]]:
         if self.__memory:
-            kwargs[self.__memory.memory_key] = []
-            for input_item in kwargs[self.input_key]:
-                kwargs[self.__memory.memory_key].extend(self.__memory.get_messages(input_item))
+            kwargs[self.__memory.memory_key] = self.__memory.get_messages(kwargs[self.input_key])
 
         output_message = super().predict(**kwargs)
 

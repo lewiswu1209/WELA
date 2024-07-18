@@ -20,7 +20,7 @@ from toolkit.definition import Definition
 from toolkit.browsing.browsing import Browsing
 from memory.window_qdrant_memory import WindowQdrantMemory
 
-def build_meta(config_file_path: str = "config.yaml", callback: ToolCallback = None):
+def build_meta(model_name: str = None, config_file_path: str = "config.yaml", callback: ToolCallback = None):
     with open(config_file_path) as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
 
@@ -59,8 +59,16 @@ def build_meta(config_file_path: str = "config.yaml", callback: ToolCallback = N
     else:
         memory = None
 
-    meta_model = OpenAIChat(model_name=config.get("openai").get("model_name"),stream=True, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
-    tool_model = OpenAIChat(model_name=config.get("openai").get("model_name"),stream=False, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
+    if config.get("openai").get("model_name"):
+        meta_model = OpenAIChat(model_name=config.get("openai").get("model_name"),stream=True, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
+        tool_model = OpenAIChat(model_name=config.get("openai").get("model_name"),stream=False, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
+    elif model_name:
+        meta_model = OpenAIChat(model_name=model_name,stream=True, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
+        tool_model = OpenAIChat(model_name=model_name,stream=False, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
+    else:
+        meta_model = OpenAIChat(stream=True, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
+        tool_model = OpenAIChat(stream=False, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
+
     toolkit = Toolkit([Quit(), Weather(), Definition(proxies), Browsing(tool_model, proxies)], callback)
 
     return Meta(model=meta_model, prompt=config.get("prompt"),memory=memory, toolkit=toolkit)
