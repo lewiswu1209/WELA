@@ -25,7 +25,7 @@ class Agent(ABC):
         return self.__output_key
 
     @abstractmethod
-    def predict(self, **kwargs: Any) -> Union[Message, Generator[Message, None, None]]:
+    def predict(self, **kwargs: Any) -> Union[Message, Generator[Message, None, None], str, Generator[str, None, None]]:
         pass
 
 __all__ = [

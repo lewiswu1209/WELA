@@ -1,6 +1,7 @@
 
 from abc import ABC
 from abc import abstractmethod
+from typing import Any
 from typing import List
 
 from schema.prompt.openai_chat import Message
@@ -14,11 +15,11 @@ class Memory(ABC):
         return self.__memory_key
 
     @abstractmethod
-    def add_message(self, message: Message) -> None:
+    def add_message(self, message: Message) -> Any:
         pass
 
     @abstractmethod
-    def get_messages(self, sentences: str) -> List[Message]:
+    def get_messages(self, message: List[Message]) -> List[Message]:
         pass
 
 __all__ = [

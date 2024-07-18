@@ -12,7 +12,7 @@ class BufferMemory(Memory):
     def add_message(self, message: Message) -> None:
         self._message_history.append(message)
 
-    def get_messages(self, _: str) -> List[Message]:
+    def get_messages(self, _: List[Message]) -> List[Message]:
         return self._message_history
 
 __all__ = [

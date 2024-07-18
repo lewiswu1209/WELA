@@ -24,11 +24,9 @@ class ConversationAgent(LLMAgent):
         super().__init__(model, prompt_template, NOT_GIVEN, toolkit, input_key, output_key, max_loop)
         self.__memory: Memory = memory
 
-    def predict(self, **kwargs: Any) -> Union[Message, Generator[Message, None, None]]:
+    def predict(self, **kwargs: Any) -> Union[Message, Generator[Message, None, None], str, Generator[str, None, None]]:
         if self.__memory:
-            kwargs[self.__memory.memory_key] = []
-            for input_item in kwargs[self.input_key]:
-                kwargs[self.__memory.memory_key].extend(self.__memory.get_messages(input_item))
+            kwargs[self.__memory.memory_key] = self.__memory.get_messages(kwargs[self.input_key])
 
         output_message = super().predict(**kwargs)
 
@@ -38,7 +36,7 @@ class ConversationAgent(LLMAgent):
                     self.__memory.add_message(message)
                 self.__memory.add_message(output_message)
             return output_message
-        def stream():
+        def stream() -> Generator[Message, None, None]:
             final_output_messsage = None
             for message in output_message:
                 final_output_messsage = message

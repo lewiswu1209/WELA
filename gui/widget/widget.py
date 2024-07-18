@@ -39,8 +39,9 @@ class Widget(QWidget):
         super(Widget, self).__init__(parent)
 
         self.__conversation_thread = ConversationThread()
-        meta = common.build_meta(callback=self.__conversation_thread)
-        self.__conversation_thread.set_meta(meta)
+        meta_gpt_3_5, meta_gpt_4o = common.build_meta(callback=self.__conversation_thread)
+        self.__conversation_thread.set_meta_gpt_3_5(meta_gpt_3_5)
+        self.__conversation_thread.set_meta_gpt_4o(meta_gpt_4o)
 
         self.__speech_recognition_thread = SpeechRecognitionThread()
         self.__speech_recognition_thread.record_completed.connect(self.__start_conversation)
@@ -160,13 +161,10 @@ class Widget(QWidget):
         QApplication.quit()
 
     def __start_conversation(self, text: str) -> None:
-        if self.__conversation_thread.meta.model.model_name in ["gpt-4o"]:
-            content_list = [ImageContentTemplate(image_url=encoded_image) for encoded_image in self.__whiteboard]
-            content_list.append(TextContentTemplate(StringPromptTemplate(text)))
-            self.__whiteboard.clear()
-            input_message = UserMessageTemplate(ContentTemplate(content_list)).to_message()
-        else:
-            input_message = UserMessageTemplate(StringPromptTemplate(text)).to_message()
+        content_list = [ImageContentTemplate(image_url=encoded_image) for encoded_image in self.__whiteboard]
+        content_list.append(TextContentTemplate(StringPromptTemplate(text)))
+        self.__whiteboard.clear()
+        input_message = UserMessageTemplate(ContentTemplate(content_list)).to_message()
 
         self.__conversation_thread.set_messages([input_message])
         self.__conversation_thread.agent_require_quit.connect(self.close)
