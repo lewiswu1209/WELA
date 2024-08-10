@@ -1,13 +1,10 @@
 
 from uuid import uuid4
-from torch import Tensor
-from numpy import ndarray
 from typing import Any
 from typing import List
-from typing import Union
 from typing import Optional
-from sentence_transformers import SentenceTransformer
-
+from modelscope.pipelines import pipeline
+from modelscope.utils.constant import Tasks
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance
 from qdrant_client.models import PointStruct
@@ -37,22 +34,29 @@ def sort_key_score(scored_point: ScoredPoint) -> float:
 class QdrantMemory(Memory):
     def __init__(self, memory_key: str, qdrant_client: QdrantClient, limit: int=10, score_threshold: Optional[float] = None) -> None:
         super().__init__(memory_key)
-        self.__sentence_transformer: SentenceTransformer = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+        self.__pipeline = pipeline(
+            Tasks.sentence_embedding,
+            model="iic/nlp_gte_sentence-embedding_chinese-small",
+            sequence_length=512
+        )
         self.__score_threshold: Optional[float] = score_threshold
         self.__limit: int = limit
         self.__client: QdrantClient = qdrant_client
         try:
             self.__client.create_collection(
                 collection_name=self.memory_key,
-                vectors_config=VectorParams(size=384, distance=Distance.COSINE),
+                vectors_config=VectorParams(size=512, distance=Distance.COSINE),
             )
         except UnexpectedResponse as _:
             pass
         except ValueError:
             pass
 
-    def __text2embedding(self, text: Union[str, List[str]]) -> Union[List[Tensor], ndarray, Tensor]:
-        return self.__sentence_transformer.encode(text).tolist()
+    def __text2embedding(self, text_list: List[str]) -> Any:
+        inputs = {
+            "source_sentence": text_list
+        }
+        return self.__pipeline(input=inputs)["text_embedding"]
 
     def add_message(self, message: Message) -> Any:
         payload={
@@ -83,7 +87,7 @@ class QdrantMemory(Memory):
         return point
 
     def _get_points_by_sentence(self, sentence: str) -> List[ScoredPoint]:
-        sentence_embedding = self.__text2embedding(sentence)
+        sentence_embedding = self.__text2embedding([sentence])[0]
         vector = [float(x) for x in sentence_embedding]
         return self.__client.search(
             collection_name=self.memory_key,

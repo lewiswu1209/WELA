@@ -1,5 +1,4 @@
 
-import os
 import wave
 import pyaudio
 import keyboard
@@ -7,10 +6,11 @@ import tempfile
 import threading
 
 from typing import List
-from funasr import AutoModel
 from PyQt5.QtCore import QObject
 from PyQt5.QtCore import QThread
 from PyQt5.QtCore import pyqtSignal
+from modelscope.pipelines import pipeline
+from modelscope.utils.constant import Tasks
 
 class SpeechRecognitionThread(QThread):
 
@@ -19,13 +19,11 @@ class SpeechRecognitionThread(QThread):
     def __init__(self, parent: QObject = None) -> None:
         super().__init__(parent)
         self.__recording: bool = False
-        self.__model: AutoModel = AutoModel(
-            model="paraformer-zh",
-            model_revision="v2.0.4",
-            vad_model="fsmn-vad",
-            vad_model_revision="v2.0.4",
-            punc_model="ct-punc-c",
-            punc_model_revision="v2.0.4"
+        self.__speech_paraformer = pipeline(
+            task=Tasks.auto_speech_recognition,
+            model='iic/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-pytorch',
+            vad_model='iic/speech_fsmn_vad_zh-cn-16k-common-pytorch',
+            punc_model='iic/punc_ct-transformer_zh-cn-common-vocab272727-pytorch'
         )
         self.__audio: pyaudio.PyAudio = pyaudio.PyAudio()
         self.__record_data: List[bytes] = []
@@ -59,7 +57,7 @@ class SpeechRecognitionThread(QThread):
         wav_file.setframerate(self.__sample_rate)
         wav_file.writeframes(b"".join(self.__record_data))
         wav_file.close()
-        res = self.__model.generate(input=file_name)
+        res = self.__speech_paraformer(file_name)
         text = res[0]["text"]
         self.record_completed.emit(text)
 
