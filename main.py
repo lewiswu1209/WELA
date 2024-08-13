@@ -55,20 +55,15 @@ if __name__ == "__main__":
         widget.show()
         app.exec_()
     else:
-        meta_gpt_3_5, meta_gpt_4o = common.build_meta(callback=ToolMessage())
+        meta = common.build_meta(callback=ToolMessage())
         encoded_image, user_text = parse_user_input()
         while True:
-            if encoded_image:
-                input_message = UserMessageTemplate(ContentTemplate(
-                    [
-                        ImageContentTemplate(image_url=encoded_image),
-                        TextContentTemplate(StringPromptTemplate(user_text))
-                    ]
-                )).to_message()
-                meta = meta_gpt_4o
-            else:
-                input_message = UserMessageTemplate(StringPromptTemplate(user_text)).to_message()
-                meta = meta_gpt_3_5
+            input_message = UserMessageTemplate(ContentTemplate(
+                [
+                    ImageContentTemplate(image_url=encoded_image),
+                    TextContentTemplate(StringPromptTemplate(user_text))
+                ]
+            )).to_message()
             response = meta.predict(__input__=[input_message])
             if not meta.model.streaming:
                 print("- {}".format(response["content"]))

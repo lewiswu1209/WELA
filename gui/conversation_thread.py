@@ -25,23 +25,12 @@ class ConversationThread(QThread, ToolCallback):
     def set_messages(self, messages: List[Message]) -> None:
         self.__messages = messages
 
-    def set_meta_gpt_3_5(self, meta: Meta) -> None:
-        self.meta_gpt_3_5 = meta
-
-    def set_meta_gpt_4o(self, meta: Meta) -> None:
-        self.meta_gpt_4o = meta
+    def set_meta(self, meta: Meta) -> None:
+        self.meta = meta
 
     def run(self) -> None:
         self.conversation_started.emit()
-        need_gpt_4o = False
-        for message in self.__messages:
-            for content in message["content"]:
-                if content["type"] == "image_url":
-                    need_gpt_4o = True
-        if need_gpt_4o:
-            response = self.meta_gpt_4o.predict(__input__=self.__messages)
-        else:
-            response = self.meta_gpt_3_5.predict(__input__=self.__messages)
+        response = self.meta.predict(__input__=self.__messages)
         for token in response:
             self.conversation_changed.emit(token["content"])
         self.conversation_finished.emit()

@@ -39,9 +39,8 @@ class Widget(QWidget):
         super(Widget, self).__init__(parent)
 
         self.__conversation_thread = ConversationThread()
-        meta_gpt_3_5, meta_gpt_4o = common.build_meta(callback=self.__conversation_thread)
-        self.__conversation_thread.set_meta_gpt_3_5(meta_gpt_3_5)
-        self.__conversation_thread.set_meta_gpt_4o(meta_gpt_4o)
+        meta = common.build_meta(callback=self.__conversation_thread)
+        self.__conversation_thread.set_meta(meta)
 
         self.__speech_recognition_thread = SpeechRecognitionThread()
         self.__speech_recognition_thread.record_completed.connect(self.__start_conversation)

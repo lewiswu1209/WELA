@@ -59,13 +59,11 @@ def build_meta(config_file_path: str = "config.yaml", callback: ToolCallback = N
     else:
         memory = None
 
-    model_3_5 = OpenAIChat(stream=True, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
-    model_4o = OpenAIChat(model_name="gpt-4o", stream=True, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
+    meta_model = OpenAIChat(model_name=config.get("openai").get("model_name"),stream=True, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
     tool_model = OpenAIChat(model_name=config.get("openai").get("model_name"),stream=False, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
-
     toolkit = Toolkit([Quit(), Weather(), Definition(proxies), Browsing(tool_model, proxies)], callback)
 
-    return Meta(model=model_3_5, prompt=config.get("prompt"),memory=memory, toolkit=toolkit), Meta(model=model_4o, prompt=config.get("prompt"),memory=memory, toolkit=toolkit)
+    return Meta(model=meta_model, prompt=config.get("prompt"),memory=memory, toolkit=toolkit)
 
 def __resize_image(image: Image.Image, max_width: int = 600, max_height: int = 450) -> Image.Image:
     """
