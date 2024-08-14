@@ -1,8 +1,6 @@
 
-import wave
 import pyaudio
 import keyboard
-import tempfile
 import threading
 
 from typing import List
@@ -21,7 +19,7 @@ class SpeechRecognitionThread(QThread):
         self.__recording: bool = False
         self.__speech_paraformer = pipeline(
             task=Tasks.auto_speech_recognition,
-            model='iic/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-pytorch',
+            model='iic/speech_paraformer_asr_nat-zh-cn-16k-common-vocab8358-tensorflow1',
             vad_model='iic/speech_fsmn_vad_zh-cn-16k-common-pytorch',
             punc_model='iic/punc_ct-transformer_zh-cn-common-vocab272727-pytorch'
         )
@@ -49,15 +47,7 @@ class SpeechRecognitionThread(QThread):
             self.__process_record_data()
 
     def __process_record_data(self) -> None:
-        temp_file = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
-        file_name = temp_file.name
-        wav_file = wave.open(temp_file, "wb")
-        wav_file.setnchannels(self.__channels)
-        wav_file.setsampwidth(self.__sample_width)
-        wav_file.setframerate(self.__sample_rate)
-        wav_file.writeframes(b"".join(self.__record_data))
-        wav_file.close()
-        res = self.__speech_paraformer(file_name)
+        res = self.__speech_paraformer(input=b"".join(self.__record_data))
         text = res[0]["text"]
         self.record_completed.emit(text)
 
