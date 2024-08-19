@@ -10,11 +10,13 @@ from PyQt5.QtWidgets import QVBoxLayout
 from PyQt5.QtWidgets import QTextBrowser
 from PyQt5.QtWidgets import QApplication
 
-class TextWidget(QWidget):
+class ChatBox(QWidget):
 
     def __init__(self, parent=None) -> None:
-        super(TextWidget, self).__init__(parent)
+        super().__init__(parent)
 
+        self.setAutoFillBackground(False)
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
 
         self.setLayout(QVBoxLayout())
@@ -23,20 +25,21 @@ class TextWidget(QWidget):
         self.__text_edit.setReadOnly(True)
         self.__text_edit.setOpenLinks(False)
         self.__text_edit.setFont(QFont("微软雅黑", 12))
+        self.__text_edit.setStyleSheet("border: 3px solid LightSkyBlue; border-radius: 5px;")
         self.__text_edit.setLineWrapMode(QTextBrowser.NoWrap)
         self.__text_edit.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.__text_edit.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.__text_edit.document().contentsChanged.connect(self.__on_content_changed)
-        self.__text_edit.anchorClicked.connect(self.__on_link_clicked)
+        self.__text_edit.document().contentsChanged.connect(self.__on_contents_changed)
+        self.__text_edit.anchorClicked.connect(self.__on_anchor_clicked)
 
         self.layout().addWidget(self.__text_edit)
 
         self.__is_max_width = False
 
-    def __on_link_clicked(self, url: QUrl) -> None:
+    def __on_anchor_clicked(self, url: QUrl) -> None:
         webbrowser.open(url.toString())
 
-    def __on_content_changed(self) -> None:
+    def __on_contents_changed(self) -> None:
         desktop_height = QApplication.desktop().availableGeometry().height()
         desktop_width = QApplication.desktop().availableGeometry().width()
 
@@ -64,14 +67,17 @@ class TextWidget(QWidget):
         self.setFixedHeight(int(fixed_height) + self.layout().spacing() * 4)
         self.setFixedWidth(int(fixed_width) + self.layout().spacing() * 4)
 
-    def set_content(self, text: str) -> None:
+    def set_contents(self, text: str) -> None:
         html = markdown.markdown(text)
         self.__text_edit.setHtml(html)
+
+    def set_border_color(self, color: str) -> None:
+        self.__text_edit.setStyleSheet(f"border: 3px solid {color}; border-radius: 5px; background: WhiteSmoke;")
 
     def reset(self) -> None:
         self.__is_max_width = False
         self.__text_edit.setLineWrapMode(QTextBrowser.NoWrap)
 
 __all__ = [
-    "TextWidget"
+    "ChatBox"
 ]

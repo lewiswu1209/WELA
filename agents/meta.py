@@ -8,9 +8,9 @@ from typing import Generator
 
 from memory.memory import Memory
 from toolkit.toolkit import Toolkit
+from models.model import Model
 from models.openai_chat import OpenAIChat
 from agents.conversation import ConversationAgent
-from schema.prompt.openai_chat import Message
 from schema.template.openai_chat import ChatTemplate
 from schema.template.openai_chat import MessageTemplate
 from schema.template.openai_chat import MessagePlaceholder
@@ -23,20 +23,23 @@ default_prompt = '''You are ChatGPT, a large language model trained by OpenAI, b
 class Meta(ConversationAgent):
     def __init__(
         self,
-        model: OpenAIChat,
+        model: Model,
         prompt: str = default_prompt,
         memory: Memory = None,
         toolkit: Toolkit = None,
         input_key="__input__",
         output_key="__output__"
     ) -> None:
-        message_template_list: List[MessageTemplate] = []
-        message_template_list.append(SystemMessageTemplate(StringPromptTemplate(prompt)))
-        if memory:
-            message_template_list.append(MessagePlaceholder(placeholder_key = memory.memory_key))
-        message_template_list.append(SystemMessageTemplate(StringPromptTemplate("{__system_hint__}")))
-        message_template_list.append(MessagePlaceholder(placeholder_key = input_key))
-        prompt_template: PromptTemplate = ChatTemplate(message_template_list)
+        if isinstance(model, OpenAIChat):
+            message_template_list: List[MessageTemplate] = []
+            message_template_list.append(SystemMessageTemplate(StringPromptTemplate(prompt)))
+            if memory:
+                message_template_list.append(MessagePlaceholder(placeholder_key = memory.memory_key))
+            message_template_list.append(SystemMessageTemplate(StringPromptTemplate("{__system_hint__}")))
+            message_template_list.append(MessagePlaceholder(placeholder_key = input_key))
+            prompt_template: PromptTemplate = ChatTemplate(message_template_list)
+        else:
+            pass
 
         super().__init__(
             model=model,
@@ -47,7 +50,7 @@ class Meta(ConversationAgent):
             output_key=output_key
         )
 
-    def predict(self, **kwargs: Any) -> Union[Message, Generator[Message, None, None]]:
+    def predict(self, **kwargs: Any) -> Union[Any, Generator[Any, None, None]]:
         kwargs["__system_hint__"] = "Current time is: {}".format(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
         return super().predict(**kwargs)
 

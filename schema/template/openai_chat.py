@@ -1,6 +1,13 @@
 
+import os
+import base64
+import mimetypes
+
+from io import BytesIO
 from abc import ABC
 from abc import abstractmethod
+from PIL import Image
+from PIL import ImageGrab
 
 from typing import Any
 from typing import List
@@ -16,8 +23,89 @@ from schema.prompt.openai_chat import AIMessage
 from schema.prompt.openai_chat import UserMessage
 from schema.prompt.openai_chat import ToolMessage
 from schema.prompt.openai_chat import SystemMessage
+# from schema.template.openai_chat import ContentTemplate
+# from schema.template.openai_chat import TextContentTemplate
+# from schema.template.openai_chat import UserMessageTemplate
+# from schema.template.openai_chat import ImageContentTemplate
 from schema.template.prompt_template import PromptTemplate
 from schema.template.prompt_template import StringPromptTemplate
+
+def __resize_image(image: Image.Image, max_width: int = 600, max_height: int = 450) -> Image.Image:
+    """
+    Resize an image to fit within the specified maximum width and height while maintaining the aspect ratio.
+
+    Parameters:
+    - image (Image.Image): PIL Image object.
+    - max_width (int): Maximum width for the resized image. Default is 800 pixels.
+    - max_height (int): Maximum height for the resized image. Default is 600 pixels.
+
+    Returns:
+    - Image.Image: Resized image object.
+    """
+    width_ratio = max_width / image.width
+    height_ratio = max_height / image.height
+    ratio = min(width_ratio, height_ratio)
+    
+    new_width = int(image.width * ratio)
+    new_height = int(image.height * ratio)
+    
+    resized_img = image.resize((new_width, new_height), Image.LANCZOS)
+    resized_img.format = image.format
+    return resized_img
+
+def encode_image(image_path: str, encoding: str = 'utf-8') -> Optional[str]:
+    """
+    Encode an image file to a Base64 string after resizing it to fit within the specified dimensions.
+
+    Parameters:
+    - image_path (str): Path to the image file.
+    - encoding (str): The encoding to use for the Base64 string. Default is 'utf-8'.
+
+    Returns:
+    - Optional[str]: Base64 encoded string of the image, or None if the image cannot be processed.
+    """
+    if not os.path.exists(image_path):
+        return None
+    
+    mime_type, _ = mimetypes.guess_type(image_path)
+    if mime_type is None or not mime_type.startswith('image'):
+        return None
+    
+    try:
+        with Image.open(image_path) as img:
+            resized_image = __resize_image(img)
+        
+        buffered = BytesIO()
+        resized_image.save(buffered, format=resized_image.format)
+        encoded_string = base64.b64encode(buffered.getvalue()).decode(encoding)
+        return f"data:{mime_type};base64,{encoded_string}"
+    except IOError as _:
+        return None
+
+def encode_clipboard_image(encoding: str = 'utf-8') -> Optional[str]:
+    """
+    Encode an image from the clipboard to a Base64 string after resizing it to fit within the specified dimensions.
+
+    Parameters:
+    - encoding (str): The encoding to use for the Base64 string. Default is 'utf-8'.
+
+    Returns:
+    - Optional[str]: Base64 encoded string of the image, or None if no image is found in the clipboard.
+    """
+    try:
+        image = ImageGrab.grabclipboard()
+        if image is None or not isinstance(image, Image.Image):
+            return None
+        
+        resized_image = __resize_image(image)
+        
+        buffered = BytesIO()
+        resized_image.save(buffered, format=resized_image.format)
+        mime_type = Image.MIME[resized_image.format]
+        encoded_string = base64.b64encode(buffered.getvalue()).decode(encoding)
+        return f"data:{mime_type};base64,{encoded_string}"
+    except Exception as _:
+        return None
 
 class TextContentTemplate(PromptTemplate):
 
@@ -32,18 +120,19 @@ class TextContentTemplate(PromptTemplate):
 
 class ImageContentTemplate(PromptTemplate):
 
-    def __init__(self, image_url: str = None, key: str = None) -> None:
+    def __init__(self, image_url: str = None, key: str = None, detail: str = "low") -> None:
         self.__key: str = key
         self.__image_url: str = image_url
+        self.__detail = detail
 
     def format(self, **kwargs: Any) -> Any:
         image_content = None
         if self.__image_url:
-            image_url = ImageURL(url=self.__image_url, detail="low")
+            image_url = ImageURL(url=self.__image_url, detail=self.__detail)
             image_content = ImageContent(image_url=image_url, type="image_url")
         elif self.__key and kwargs.get(self.__key, None):
-            image_url = ImageURL(url=kwargs.get(self.__key, None), detail="low")
-            image_content = ImageContent(image_url=image_url, type="im/age_url")
+            image_url = ImageURL(url=kwargs.get(self.__key, None), detail=self.__detail)
+            image_content = ImageContent(image_url=image_url, type="image_url")
 
         return image_content
 
@@ -169,6 +258,8 @@ class ChatTemplate(PromptTemplate):
         return messages
 
 __all__ = [
+    "encode_image",
+    "encode_clipboard_image",
     "TextContentTemplate",
     "ImageContentTemplate",
     "ContentTemplate",

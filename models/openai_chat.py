@@ -14,10 +14,11 @@ from openai.types.chat import ChatCompletion
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat import ChatCompletionToolParam
 
+from models.model import Model
 from schema.prompt.openai_chat import Message
 from schema.prompt.openai_chat import AIMessage
 
-class OpenAIChat:
+class OpenAIChat(Model):
     def __init__(
         self,
         model_name: str = "gpt-3.5-turbo",
@@ -27,8 +28,9 @@ class OpenAIChat:
         top_p: Optional[float] | NotGiven = NOT_GIVEN,
         frequency_penalty: Optional[float] | NotGiven = NOT_GIVEN,
         presence_penalty: Optional[float] | NotGiven = NOT_GIVEN,
-        stream: Optional[Literal[False]] | Literal[True] | NotGiven = NOT_GIVEN,
+        stream: Optional[Literal[False]] | Literal[True] | NotGiven = NOT_GIVEN
     ) -> None:
+        super().__init__()
         self.__model_name: str = model_name
         self.__client: OpenAI = OpenAI(api_key=api_key, base_url=base_url)
         self.__temperature: Optional[float] | NotGiven = temperature
@@ -42,8 +44,8 @@ class OpenAIChat:
         return self.__model_name
 
     @property
-    def streaming(self) -> NotGiven | bool:
-        return self.__stream
+    def streaming(self) -> bool:
+        return self.__stream if not self.__stream == NOT_GIVEN else False
 
     def __create(
         self,

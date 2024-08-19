@@ -1,8 +1,7 @@
 
 import os
+import sys
 import random
-
-import common
 
 from datetime import datetime
 from PyQt5.QtGui import QIcon
@@ -14,6 +13,7 @@ from PyQt5.QtGui import QDragEnterEvent
 from PyQt5.QtCore import Qt
 from PyQt5.QtCore import QSize
 from PyQt5.QtCore import QPoint
+from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import QMenu
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtWidgets import QAction
@@ -22,34 +22,30 @@ from PyQt5.QtWidgets import QVBoxLayout
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtWidgets import QInputDialog
 from PyQt5.QtWidgets import QSystemTrayIcon
+from modelscope.pipelines import Pipeline
 
+from agents.meta import Meta
+from gui.chat_box import ChatBox
 from gui.whiteboard import Whiteboard
-from gui.widget.output_box import TextWidget
+from gui.initializer import Initializer
 from gui.conversation_thread import ConversationThread
 from gui.speech_recognition_thread import SpeechRecognitionThread
+from schema.template.openai_chat import encode_image
+from schema.template.openai_chat import encode_clipboard_image
 from schema.template.openai_chat import ContentTemplate
 from schema.template.openai_chat import UserMessageTemplate
 from schema.template.openai_chat import TextContentTemplate
 from schema.template.openai_chat import ImageContentTemplate
 from schema.template.prompt_template import StringPromptTemplate
 
-class Widget(QWidget):
+class WelaWidget(QWidget):
 
     def __init__(self, parent: QWidget = None) -> None:
-        super(Widget, self).__init__(parent)
-
-        self.__conversation_thread = ConversationThread()
-        meta = common.build_meta(callback=self.__conversation_thread)
-        self.__conversation_thread.set_meta(meta)
-
-        self.__speech_recognition_thread = SpeechRecognitionThread()
-        self.__speech_recognition_thread.record_completed.connect(self.__start_conversation)
-        self.__speech_recognition_thread.start()
+        super().__init__(parent)
 
         self.__is_mouse_dragging = False
-        self.__whiteboard = Whiteboard()
+        self.__is_initialize_completed = False
 
-        self.setAcceptDrops(True)
         self.setLayout(QVBoxLayout(self))
         self.setAutoFillBackground(False)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
@@ -62,24 +58,7 @@ class Widget(QWidget):
         else:
             self.__change_status(status="normal")
 
-        exit_action = QAction("退出", self)
-        exit_action.triggered.connect(self.close)
-        board_add_clipboard_action = QAction("粘贴图像到白板", self)
-        board_add_clipboard_action.triggered.connect(self.__paste_image_to_whiteboard)
-        board_clear_action = QAction("清空白板", self)
-        board_clear_action.triggered.connect(self.__clear_whiteboard)
-
-        self.__context_menu = QMenu(self)
-        self.__context_menu.addAction(board_clear_action)
-        self.__context_menu.addAction(board_add_clipboard_action)
-        self.__context_menu.addAction(exit_action)
-
-        tray_icon = QSystemTrayIcon(self)
-        tray_icon.setIcon(QIcon("res/icon.png"))
-        tray_icon.setContextMenu(self.__context_menu)
-        tray_icon.show()
-
-        self.__text_widget = TextWidget()
+        self.__chat_box = ChatBox()
 
         self.show()
         desktop_geometry = QApplication.desktop().availableGeometry()
@@ -88,8 +67,58 @@ class Widget(QWidget):
         initial_position.setY(desktop_geometry.bottom() - self.height())
         self.move(initial_position)
 
+        self.__initialize()
+
+    def __initialize(self) -> None:
+        self.__initialize_thread = QThread()
+        self.__initializer = Initializer()
+        self.__initializer.signal.meta_created.connect(self.__on_meta_created)
+        self.__initializer.signal.speech_recognition_created.connect(self.__on_speech_recognition_created)
+        self.__initializer.signal.whiteboard_created.connect(self.__on_whiteboard_created)
+        self.__initializer.signal.chat_updated.connect(self.__on_chat_updated)
+        self.__initializer.signal.initialize_completed.connect(self.__on_initialize_completed)
+        self.__initializer.moveToThread(self.__initialize_thread)
+        self.__initialize_thread.started.connect(self.__initializer.initialize)
+        self.__chat_box.set_border_color("LightSalmon")
+        self.__initialize_thread.start()
+
+    def __on_meta_created(self, meta: Meta) -> None:
+        self.__conversation_thread = ConversationThread()
+        meta.toolkit.set_callback(self.__conversation_thread)
+        self.__conversation_thread.set_meta(meta)
+
+    def __on_speech_recognition_created(self, speech_recognition_pipeline: Pipeline) -> None:
+        self.__speech_recognition_thread = SpeechRecognitionThread(speech_recognition_pipeline = speech_recognition_pipeline)
+        self.__speech_recognition_thread.record_completed.connect(self.__start_conversation)
+
+    def __on_whiteboard_created(self, whiteboard: Whiteboard) -> None:
+        self.__whiteboard = whiteboard
+
+    def __on_initialize_completed(self) -> None:
+        exit_action = QAction("退出", self)
+        exit_action.triggered.connect(self.close)
+        paste_to_whiteboard_action = QAction("粘贴到白板", self)
+        paste_to_whiteboard_action.triggered.connect(self.__paste_to_whiteboard)
+        clear_whiteboard_action = QAction("清空白板", self)
+        clear_whiteboard_action.triggered.connect(self.__clear_whiteboard)
+
+        self.__context_menu = QMenu(self)
+        self.__context_menu.addAction(paste_to_whiteboard_action)
+        self.__context_menu.addAction(clear_whiteboard_action)
+        self.__context_menu.addAction(exit_action)
+
+        tray_icon = QSystemTrayIcon(self)
+        tray_icon.setIcon(QIcon(os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), "res/icon.png")))
+        tray_icon.setContextMenu(self.__context_menu)
+        tray_icon.show()
+
+        self.__speech_recognition_thread.start()
+        self.setAcceptDrops(True)
+        self.__is_initialize_completed = True
+        self.__chat_box.set_border_color("LightSkyBlue")
+
     def __change_status(self, status = "normal"):
-        folder_path = f"res/{status}"
+        folder_path = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), f"res/{status}")
         files = os.listdir(folder_path)
         file = os.path.join(folder_path, random.choice(files))
         pixmap = QPixmap(file)
@@ -109,7 +138,7 @@ class Widget(QWidget):
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.LeftButton:
             self.__is_mouse_dragging = True
-            self.__text_widget.hide()
+            self.__chat_box.hide()
             self.__drag_offset: QPoint = event.globalPos() - self.pos()
         event.accept()
 
@@ -128,11 +157,12 @@ class Widget(QWidget):
         event.accept()
 
     def contextMenuEvent(self, event: QMouseEvent) -> None:
-        self.__context_menu.exec(self.mapToGlobal(event.pos()))
+        if self.__is_initialize_completed:
+            self.__context_menu.exec(self.mapToGlobal(event.pos()))
         event.accept()
 
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
-        if event.button() == Qt.LeftButton:
+        if self.__is_initialize_completed and event.button() == Qt.LeftButton:
             text, ok = QInputDialog.getText(self, "输入框", "请输入一些文本:")
             if ok:
                 self.__start_conversation(text)
@@ -151,11 +181,11 @@ class Widget(QWidget):
         for url in event.mimeData().urls():
             file = url.toLocalFile()
             if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
-                encode_image = common.encode_image(file)
-                self.__whiteboard.append(encode_image)
+                encoded_image = encode_image(file)
+                self.__whiteboard.append(encoded_image)
 
     def closeEvent(self, _) -> None:
-        self.__text_widget.hide()
+        self.__chat_box.hide()
         self.hide()
         QApplication.quit()
 
@@ -167,44 +197,46 @@ class Widget(QWidget):
 
         self.__conversation_thread.set_messages([input_message])
         self.__conversation_thread.agent_require_quit.connect(self.close)
-        self.__conversation_thread.conversation_started.connect(self.__on_conversation_started)
-        self.__conversation_thread.conversation_changed.connect(self.__on_conversation_changed)
-        self.__conversation_thread.conversation_finished.connect(self.__on_conversation_finished)
+        self.__conversation_thread.conversation_started.connect(self.__on_chat_started)
+        self.__conversation_thread.conversation_changed.connect(self.__on_chat_updated)
+        self.__conversation_thread.conversation_finished.connect(self.__on_chat_finished)
         self.__conversation_thread.start()
 
-    def __on_conversation_started(self) -> None:
-        self.__text_widget.reset()
-        self.__change_status(status="working")
-        self.__on_conversation_changed("对方正在输入……")
+    def __paste_to_whiteboard(self):
+        encoded_image = encode_clipboard_image()
+        self.__whiteboard.append(encoded_image)
 
-    def __on_conversation_changed(self, text: str) -> None:
-        self.__text_widget.set_content(text)
-        self.__text_widget.show()
+    def __clear_whiteboard(self):
+        self.__whiteboard.clear()
+
+    def __on_chat_started(self) -> None:
+        self.__chat_box.reset()
+        self.__change_status(status="working")
+        self.__on_chat_updated("对方正在输入……")
+        self.__chat_box.set_border_color("LightSalmon")
+
+    def __on_chat_updated(self, text: str) -> None:
+        self.__chat_box.set_contents(text)
+        self.__chat_box.show()
         desktop_center = QApplication.desktop().availableGeometry().center()
         self_center = self.geometry().center()
         if self_center.x() > desktop_center.x():
-            x = self.x() - self.__text_widget.width() + self.width()
+            x = self.x() - self.__chat_box.width() + self.width()
         else:
             x = self.x()
         if self_center.y() > desktop_center.y():
-            y = self.y() - self.__text_widget.height()
+            y = self.y() - self.__chat_box.height()
         else:
             y = self.y() + self.height()
-        self.__text_widget.move(QPoint(x, y))
+        self.__chat_box.move(QPoint(x, y))
 
-    def __on_conversation_finished(self) -> None:
+    def __on_chat_finished(self) -> None:
+        self.__chat_box.set_border_color("LightSkyBlue")
         if 0 <= datetime.now().hour <= 5:
             self.__change_status(status="sleeping")
         else:
             self.__change_status(status="normal")
 
-    def __paste_image_to_whiteboard(self):
-        encode_image = common.encode_clipboard_image()
-        self.__whiteboard.append(encode_image)
-
-    def __clear_whiteboard(self):
-        self.__whiteboard.clear()
-
 __all__ = [
-    "Widget"
+    "WelaWidget"
 ]

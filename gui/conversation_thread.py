@@ -26,11 +26,11 @@ class ConversationThread(QThread, ToolCallback):
         self.__messages = messages
 
     def set_meta(self, meta: Meta) -> None:
-        self.meta = meta
+        self.__meta = meta
 
     def run(self) -> None:
         self.conversation_started.emit()
-        response = self.meta.predict(__input__=self.__messages)
+        response = self.__meta.predict(__input__=self.__messages)
         for token in response:
             self.conversation_changed.emit(token["content"])
         self.conversation_finished.emit()

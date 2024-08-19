@@ -4,11 +4,11 @@ from typing import List
 from typing import Union
 from typing import Optional
 from typing import Generator
-from openai._types import NotGiven
 from openai._types import NOT_GIVEN
 
 from agents.agent import Agent
 from toolkit.toolkit import Toolkit
+from models.model import Model
 from models.openai_chat import OpenAIChat
 from schema.prompt.openai_chat import Message
 from schema.prompt.openai_chat import ToolCall
@@ -19,26 +19,34 @@ from schema.template.prompt_template import PromptTemplate
 class LLMAgent(Agent):
 
     def __init__(self,
-        model: OpenAIChat,
+        model: Model,
         prompt_template: PromptTemplate,
-        stop: Union[Optional[str], List[str], None] | NotGiven = NOT_GIVEN,
+        stop: Union[Optional[str], List[str], None] = None,
         toolkit: Toolkit = None,
         input_key: str = "__input__",
         output_key: str = "__output__",
         max_loop: int = 5
     ) -> None:
-        self.__model: OpenAIChat = model
+        self.__model: Model = model
         self.__prompt_template: PromptTemplate = prompt_template
-        self.__stop: Union[Optional[str], List[str], None] | NotGiven = stop
+        self.__stop: Union[Optional[str], List[str], None] = stop
         self.__toolkit: Toolkit = toolkit
         super().__init__(input_key, output_key)
         self.__max_loop: int = max_loop
 
+        if self.__stop is None:
+            if isinstance(self.__model, OpenAIChat):
+                self.__stop = NOT_GIVEN
+
     @property
-    def model(self) -> OpenAIChat:
+    def model(self) -> Model:
         return self.__model
 
-    def predict(self, **kwargs: Any) -> Union[Message, Generator[Message, None, None], str, Generator[str, None, None]]:
+    @property
+    def toolkit(self) -> Toolkit:
+        return self.__toolkit
+
+    def predict(self, **kwargs: Any) -> Union[Any, Generator[Any, None, None]]:
         if isinstance(self.__model, OpenAIChat):
             messages: List[Message] = self.__prompt_template.format(**kwargs)
             if not self.__model.streaming:
@@ -63,7 +71,7 @@ class LLMAgent(Agent):
                         break
                 return response_message
             else:
-                def stream() -> Generator[Message, None, None]:
+                def stream() -> Generator[Any, None, None]:
                     for i in range(self.__max_loop):
                         if i == self.__max_loop - 1 or not self.__toolkit:
                             response_message = self.__model.predict(messages, stop=self.__stop)
@@ -108,7 +116,7 @@ class LLMAgent(Agent):
             if not self.__model.streaming:
                 return "This is a test for other model"
             else:
-                def stream() -> Generator[str, None, None]:
+                def stream() -> Generator[Any, None, None]:
                     for i in "This is a test for other model":
                         yield i
                 return stream()

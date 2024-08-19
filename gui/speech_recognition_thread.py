@@ -7,26 +7,19 @@ from typing import List
 from PyQt5.QtCore import QObject
 from PyQt5.QtCore import QThread
 from PyQt5.QtCore import pyqtSignal
-from modelscope.pipelines import pipeline
-from modelscope.utils.constant import Tasks
+from modelscope.pipelines import Pipeline
 
 class SpeechRecognitionThread(QThread):
 
     record_completed = pyqtSignal(str)
 
-    def __init__(self, parent: QObject = None) -> None:
+    def __init__(self, parent: QObject = None, speech_recognition_pipeline: Pipeline = None) -> None:
         super().__init__(parent)
         self.__recording: bool = False
-        self.__speech_paraformer = pipeline(
-            task=Tasks.auto_speech_recognition,
-            model='iic/speech_paraformer_asr_nat-zh-cn-16k-common-vocab8358-tensorflow1',
-            vad_model='iic/speech_fsmn_vad_zh-cn-16k-common-pytorch',
-            punc_model='iic/punc_ct-transformer_zh-cn-common-vocab272727-pytorch'
-        )
+        self.__speech_recognition_pipeline = speech_recognition_pipeline
         self.__audio: pyaudio.PyAudio = pyaudio.PyAudio()
         self.__record_data: List[bytes] = []
         self.__channels: int = 1
-        self.__sample_width: int = self.__audio.get_sample_size(pyaudio.paInt16)
         self.__sample_rate: int = 16000
         self.__chunk_size: int = 1024
         self.__record_finished_signal = threading.Event()
@@ -47,7 +40,7 @@ class SpeechRecognitionThread(QThread):
             self.__process_record_data()
 
     def __process_record_data(self) -> None:
-        res = self.__speech_paraformer(input=b"".join(self.__record_data))
+        res = self.__speech_recognition_pipeline(input=b"".join(self.__record_data))
         text = res[0]["text"]
         self.record_completed.emit(text)
 

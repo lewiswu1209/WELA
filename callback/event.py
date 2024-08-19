@@ -1,8 +1,9 @@
 
+from abc import ABC
 from typing import Any
 from typing import Dict
 
-class Event:
+class Event(ABC):
     pass
 
 class ToolEvent(Event):

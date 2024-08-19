@@ -4,8 +4,8 @@ import json
 from abc import ABC
 from abc import abstractmethod
 from typing import Any
-from typing import List
 from typing import Dict
+from typing import List
 
 from callback.event import ToolEvent
 from callback.callback import ToolCallback
@@ -43,8 +43,14 @@ class Tool(ABC):
 class Toolkit(Dict[str, Tool]):
 
     def __init__(self, tools: List[Tool], callback: ToolCallback = None) -> None:
-        for i in tools:
-            self[i.name] = i
+        for tool in tools:
+            self[tool.name] = tool
+        self.__callback = callback
+
+    def add_tool(self, tool: Tool) -> None:
+        self[tool.name] = tool
+
+    def set_callback(self, callback: ToolCallback) -> None:
         self.__callback = callback
 
     def run(self, function: Function) -> str:

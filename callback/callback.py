@@ -1,7 +1,7 @@
 
 from callback.event import ToolEvent
 
-class Callback:
+class Callback():
     pass
 
 class ToolCallback(Callback):

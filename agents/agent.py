@@ -5,8 +5,6 @@ from typing import Any
 from typing import Union
 from typing import Generator
 
-from schema.prompt.openai_chat import Message
-
 class Agent(ABC):
 
     def __init__(self,
@@ -25,7 +23,7 @@ class Agent(ABC):
         return self.__output_key
 
     @abstractmethod
-    def predict(self, **kwargs: Any) -> Union[Message, Generator[Message, None, None], str, Generator[str, None, None]]:
+    def predict(self, **kwargs: Any) -> Union[Any, Generator[Any, None, None]]:
         pass
 
 __all__ = [
