@@ -37,7 +37,7 @@ class Initializer(QObject):
     @pyqtSlot()
     def initialize(self):
         self.signal.chat_updated.emit("开始初始化")
-        with open(os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), "config.yaml")) as f:
+        with open(os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), "config.yaml"), encoding="utf-8") as f:
             config = yaml.load(f, Loader=yaml.FullLoader)
 
         self.signal.chat_updated.emit("加载记忆模块")

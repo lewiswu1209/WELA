@@ -60,7 +60,7 @@ def parse_user_input():
         return None, user_input
 
 def build_meta(config_file_path: str = "config.yaml", callback: ToolCallback = None):
-    with open(os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), config_file_path)) as f:
+    with open(os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), config_file_path), encoding="utf-8") as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
 
     if config.get("proxy", None):
