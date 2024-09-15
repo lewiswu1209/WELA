@@ -1,6 +1,7 @@
 
 import os
 import sys
+import time
 import random
 
 from datetime import datetime
@@ -24,6 +25,7 @@ from PyQt5.QtWidgets import QInputDialog
 from PyQt5.QtWidgets import QSystemTrayIcon
 from modelscope.pipelines import Pipeline
 
+from gui.alarm import Alarm
 from agents.meta import Meta
 from gui.chat_box import ChatBox
 from gui.whiteboard import Whiteboard
@@ -36,6 +38,7 @@ from schema.template.openai_chat import ContentTemplate
 from schema.template.openai_chat import UserMessageTemplate
 from schema.template.openai_chat import TextContentTemplate
 from schema.template.openai_chat import ImageContentTemplate
+from schema.template.openai_chat import SystemMessageTemplate
 from schema.template.prompt_template import StringPromptTemplate
 
 class WelaWidget(QWidget):
@@ -82,41 +85,6 @@ class WelaWidget(QWidget):
         self.__chat_box.set_border_color("LightSalmon")
         self.__initialize_thread.start()
 
-    def __on_meta_created(self, meta: Meta) -> None:
-        self.__conversation_thread = ConversationThread()
-        meta.toolkit.set_callback(self.__conversation_thread)
-        self.__conversation_thread.set_meta(meta)
-
-    def __on_speech_recognition_created(self, speech_recognition_pipeline: Pipeline) -> None:
-        self.__speech_recognition_thread = SpeechRecognitionThread(speech_recognition_pipeline = speech_recognition_pipeline)
-        self.__speech_recognition_thread.record_completed.connect(self.__start_conversation)
-
-    def __on_whiteboard_created(self, whiteboard: Whiteboard) -> None:
-        self.__whiteboard = whiteboard
-
-    def __on_initialize_completed(self) -> None:
-        exit_action = QAction("退出", self)
-        exit_action.triggered.connect(self.close)
-        paste_to_whiteboard_action = QAction("粘贴到白板", self)
-        paste_to_whiteboard_action.triggered.connect(self.__paste_to_whiteboard)
-        clear_whiteboard_action = QAction("清空白板", self)
-        clear_whiteboard_action.triggered.connect(self.__clear_whiteboard)
-
-        self.__context_menu = QMenu(self)
-        self.__context_menu.addAction(paste_to_whiteboard_action)
-        self.__context_menu.addAction(clear_whiteboard_action)
-        self.__context_menu.addAction(exit_action)
-
-        tray_icon = QSystemTrayIcon(self)
-        tray_icon.setIcon(QIcon(os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), "res/icon.png")))
-        tray_icon.setContextMenu(self.__context_menu)
-        tray_icon.show()
-
-        self.__speech_recognition_thread.start()
-        self.setAcceptDrops(True)
-        self.__is_initialize_completed = True
-        self.__chat_box.set_border_color("LightSkyBlue")
-
     def __change_status(self, status = "normal"):
         folder_path = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), f"res/{status}")
         files = os.listdir(folder_path)
@@ -134,6 +102,25 @@ class WelaWidget(QWidget):
         self.__label.setMovie(movie)
         self.layout().addWidget(self.__label)
         self.resize(self.__label.size())
+
+    def __start_conversation(self, text: str) -> None:
+        content_list = [ImageContentTemplate(image_url=encoded_image) for encoded_image in self.__whiteboard]
+        content_list.append(TextContentTemplate(StringPromptTemplate(text)))
+        self.__whiteboard.clear()
+        input_message = UserMessageTemplate(ContentTemplate(content_list)).to_message()
+
+        self.__conversation_thread.set_messages([input_message])
+        self.__conversation_thread.start()
+
+    def __paste_to_whiteboard(self):
+        encoded_image = encode_clipboard_image()
+        self.__whiteboard.append(encoded_image)
+
+    def __clear_whiteboard(self):
+        self.__whiteboard.clear()
+
+    def __schedule(self, time_str, reason):
+        self.__alarm.schedule(time_str, reason)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.LeftButton:
@@ -185,29 +172,10 @@ class WelaWidget(QWidget):
                 self.__whiteboard.append(encoded_image)
 
     def closeEvent(self, _) -> None:
+        self.__alarm.stop()
         self.__chat_box.hide()
         self.hide()
         QApplication.quit()
-
-    def __start_conversation(self, text: str) -> None:
-        content_list = [ImageContentTemplate(image_url=encoded_image) for encoded_image in self.__whiteboard]
-        content_list.append(TextContentTemplate(StringPromptTemplate(text)))
-        self.__whiteboard.clear()
-        input_message = UserMessageTemplate(ContentTemplate(content_list)).to_message()
-
-        self.__conversation_thread.set_messages([input_message])
-        self.__conversation_thread.agent_require_quit.connect(self.close)
-        self.__conversation_thread.conversation_started.connect(self.__on_chat_started)
-        self.__conversation_thread.conversation_changed.connect(self.__on_chat_updated)
-        self.__conversation_thread.conversation_finished.connect(self.__on_chat_finished)
-        self.__conversation_thread.start()
-
-    def __paste_to_whiteboard(self):
-        encoded_image = encode_clipboard_image()
-        self.__whiteboard.append(encoded_image)
-
-    def __clear_whiteboard(self):
-        self.__whiteboard.clear()
 
     def __on_chat_started(self) -> None:
         self.__chat_box.reset()
@@ -236,6 +204,61 @@ class WelaWidget(QWidget):
             self.__change_status(status="sleeping")
         else:
             self.__change_status(status="normal")
+
+    def __on_alarm(self, timestamp, reason):
+        date_time = time.strftime("%Y-%m-%d %H:%M", time.gmtime(timestamp))
+        input_message = SystemMessageTemplate(
+            StringPromptTemplate(
+                "The alarm clock is ringing, the current time is: {date_time}, it's time for '{reason}'"
+            )
+        ).to_message(date_time=date_time, reason=reason)
+
+        self.__conversation_thread.set_messages([input_message])
+        self.__conversation_thread.start()
+
+    def __on_meta_created(self, meta: Meta) -> None:
+        self.__conversation_thread = ConversationThread()
+        meta.toolkit.set_callback(self.__conversation_thread)
+        self.__conversation_thread.set_meta(meta)
+        self.__conversation_thread.agent_require_quit.connect(self.close)
+        self.__conversation_thread.conversation_started.connect(self.__on_chat_started)
+        self.__conversation_thread.conversation_changed.connect(self.__on_chat_updated)
+        self.__conversation_thread.conversation_finished.connect(self.__on_chat_finished)
+        self.__conversation_thread.set_alarm_clock.connect(self.__schedule)
+
+    def __on_speech_recognition_created(self, speech_recognition_pipeline: Pipeline) -> None:
+        self.__speech_recognition_thread = SpeechRecognitionThread(speech_recognition_pipeline = speech_recognition_pipeline)
+        self.__speech_recognition_thread.record_completed.connect(self.__start_conversation)
+
+    def __on_whiteboard_created(self, whiteboard: Whiteboard) -> None:
+        self.__whiteboard = whiteboard
+
+    def __on_initialize_completed(self) -> None:
+        exit_action = QAction("退出", self)
+        exit_action.triggered.connect(self.close)
+        paste_to_whiteboard_action = QAction("粘贴到白板", self)
+        paste_to_whiteboard_action.triggered.connect(self.__paste_to_whiteboard)
+        clear_whiteboard_action = QAction("清空白板", self)
+        clear_whiteboard_action.triggered.connect(self.__clear_whiteboard)
+
+        self.__context_menu = QMenu(self)
+        self.__context_menu.addAction(paste_to_whiteboard_action)
+        self.__context_menu.addAction(clear_whiteboard_action)
+        self.__context_menu.addAction(exit_action)
+
+        tray_icon = QSystemTrayIcon(self)
+        tray_icon.setIcon(QIcon(os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), "res/icon.png")))
+        tray_icon.setContextMenu(self.__context_menu)
+        tray_icon.show()
+
+        self.__speech_recognition_thread.start()
+        self.setAcceptDrops(True)
+        self.__is_initialize_completed = True
+        self.__chat_box.set_border_color("LightSkyBlue")
+
+        self.__alarm = Alarm(self)
+        self.__alarm.alarm.connect(self.__on_alarm)
+        self.__alarm.start(1000)
 
 __all__ = [
     "WelaWidget"

@@ -17,6 +17,7 @@ class ConversationThread(QThread, ToolCallback):
     conversation_changed = pyqtSignal(str)
     conversation_finished= pyqtSignal()
     agent_require_quit = pyqtSignal()
+    set_alarm_clock = pyqtSignal(str, str)
 
     def __init__(self, parent: QObject = None) -> None:
         super().__init__(parent)
@@ -41,6 +42,8 @@ class ConversationThread(QThread, ToolCallback):
     def before_tool_call(self, event: ToolEvent) -> None:
         if event.tool_name == "quit":
             pass
+        elif event.tool_name == "set_alarm_clock":
+            self.set_alarm_clock.emit(event.arguments["date_time"], event.arguments["reason"])
         else:
             self.conversation_changed.emit("准备使用工具:{}\n参数:\n{}".format(event.tool_name, event.arguments))
 

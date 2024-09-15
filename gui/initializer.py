@@ -11,13 +11,14 @@ from modelscope.pipelines import Pipeline
 from modelscope.utils.constant import Tasks
 
 from agents.meta import Meta
-from models.openai_chat import OpenAIChat
 from qdrant_client import QdrantClient
 from gui.whiteboard import Whiteboard
+from models.openai_chat import OpenAIChat
 from toolkit.quit import Quit
 from toolkit.toolkit import Toolkit
 from toolkit.weather import Weather
 from toolkit.definition import Definition
+from toolkit.alarm_clock import AlarmClock
 from toolkit.browsing.browsing import Browsing
 from memory.window_qdrant_memory import WindowQdrantMemory
 
@@ -76,7 +77,7 @@ class Initializer(QObject):
         else:
             proxies = None
         tool_model = OpenAIChat(model_name=config.get("openai").get("model_name"),stream=False, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
-        toolkit = Toolkit([Quit(), Weather(), Definition(proxies), Browsing(tool_model, proxies)], None)
+        toolkit = Toolkit([AlarmClock(), Quit(), Weather(), Definition(proxies), Browsing(tool_model, proxies)], None)
         self.signal.chat_updated.emit("加载人物性格")
         meta_model = OpenAIChat(model_name=config.get("openai").get("model_name"),stream=True, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
         meta = Meta(model=meta_model, prompt=config.get("prompt"),memory=memory, toolkit=toolkit)

@@ -6,17 +6,17 @@ import yaml
 from qdrant_client import QdrantClient
 from PyQt5.QtWidgets import QApplication
 
-from gui.wela_widget import WelaWidget
 from agents.meta import Meta
+from gui.wela_widget import WelaWidget
+from models.openai_chat import OpenAIChat
 from callback.event import ToolEvent
 from callback.callback import ToolCallback
-from models.openai_chat import OpenAIChat
+from memory.window_qdrant_memory import WindowQdrantMemory
 from toolkit.quit import Quit
 from toolkit.toolkit import Toolkit
 from toolkit.weather import Weather
 from toolkit.definition import Definition
 from toolkit.browsing.browsing import Browsing
-from memory.window_qdrant_memory import WindowQdrantMemory
 from schema.template.openai_chat import encode_image
 from schema.template.openai_chat import encode_clipboard_image
 from schema.template.openai_chat import ContentTemplate
