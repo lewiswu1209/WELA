@@ -6,6 +6,7 @@ from typing import Optional
 from modelscope.pipelines import pipeline
 from modelscope.utils.constant import Tasks
 from qdrant_client import QdrantClient
+from qdrant_client.models import Record
 from qdrant_client.models import Distance
 from qdrant_client.models import PointStruct
 from qdrant_client.models import VectorParams
@@ -19,6 +20,7 @@ from schema.prompt.openai_chat import Message
 def unique(scored_points: List[ScoredPoint]):
     seen_uuids = set()
     unique_scored_points: List[ScoredPoint] = []
+    scored_points = sorted(scored_points, key=sort_key_id, reverse=True)
     for scored_point in scored_points:
         if scored_point.payload["uuid"] not in seen_uuids:
             seen_uuids.add(scored_point.payload["uuid"])
@@ -71,7 +73,6 @@ class QdrantMemory(Memory):
                 if content["type"] == "text":
                     sentences.append(content["text"])
         sentences_embedding = self.__text2embedding(sentences)
-        point = None
         for sentence_embedding in sentences_embedding:
             vector = [float(x) for x in sentence_embedding]
             id = self.__client.count(collection_name=self.memory_key).count + 1
@@ -84,7 +85,6 @@ class QdrantMemory(Memory):
                 collection_name=self.memory_key,
                 points=[point]
             )
-        return point
 
     def _get_points_by_sentence(self, sentence: str) -> List[ScoredPoint]:
         sentence_embedding = self.__text2embedding([sentence])[0]
@@ -117,6 +117,14 @@ class QdrantMemory(Memory):
         for message in message_list:
             scored_points.extend(self._get_points_by_message(message))
         return scored_points
+
+    def _get_last_n_points(self, n) -> List[ScoredPoint]:
+        ids: List[int] = [id + 1 for id in range(0, self.__client.count(collection_name=self.memory_key).count)][-n:]
+        records: List[Record] = self.__client.retrieve(
+            collection_name=self.memory_key,
+            ids=ids
+        )
+        return [ScoredPoint(id=record.id, version=record.id-1, score=1.0, payload=record.payload, vector=record.vector) for record in records]
 
     def get_messages(self, message_list: List[Message]) -> List[Message]:
         scored_points = self._get_points_by_message_list(message_list)
