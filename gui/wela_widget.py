@@ -173,6 +173,7 @@ class WelaWidget(QWidget):
 
     def closeEvent(self, _) -> None:
         self.__alarm.stop()
+        self.__alarm.dump()
         self.__chat_box.hide()
         self.hide()
         QApplication.quit()
@@ -209,7 +210,7 @@ class WelaWidget(QWidget):
         date_time = time.strftime("%Y-%m-%d %H:%M", time.gmtime(timestamp))
         input_message = SystemMessageTemplate(
             StringPromptTemplate(
-                "The alarm clock is ringing, the current time is: {date_time}, it's time for '{reason}'"
+                "The alarm is going off. It's time to remind user to do '{reason}'."
             )
         ).to_message(date_time=date_time, reason=reason)
 
@@ -258,6 +259,7 @@ class WelaWidget(QWidget):
 
         self.__alarm = Alarm(self)
         self.__alarm.alarm.connect(self.__on_alarm)
+        self.__alarm.load()
         self.__alarm.start(1000)
 
 __all__ = [

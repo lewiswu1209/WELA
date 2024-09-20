@@ -17,17 +17,17 @@ class Weather(Tool):
     def __init__(self) -> None:
         super().__init__(
             name="get_weather_forecast",
-            description="Get the weather forecast in a given location",
-            required=["location"],
-            location={
+            description="Get the weather forecast for a given city",
+            required=["city"],
+            city={
                 "type": "string",
                 "description": "The city. e.g. San+Francisco"
             }
         )
 
     def _invoke(self, **kwargs: Any) -> str:
-        location = kwargs["location"]
-        url: str = f"https://wttr.in/{location}?format=j1"
+        city = kwargs["city"]
+        url: str = f"https://wttr.in/{city}?format=j1"
         try:
             response = requests.get(url).content.decode(encoding="utf-8")
             data = json.loads(response)

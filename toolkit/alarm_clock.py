@@ -14,7 +14,7 @@ class AlarmClock(Tool):
             },
             reason={
                 "type": "string",
-                "description": "The reason for setting the alarm. e.g. Remind user to go to Meeting Room for a meeting"
+                "description": "The reason for setting the alarm."
             }
         )
 

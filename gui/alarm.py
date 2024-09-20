@@ -1,9 +1,10 @@
 
+import os
+import json
 import time
 
 from PyQt5.QtCore import QTimer
 from PyQt5.QtCore import QObject
-
 from PyQt5.QtCore import pyqtSignal
 
 class Alarm(QTimer):
@@ -23,5 +24,21 @@ class Alarm(QTimer):
             self.alarm.emit(timestamp, reason)
 
     def schedule(self, time_str, reason):
-        timestamp = time.mktime(time.strptime(time_str, "%Y-%m-%d %H:%M"))
+        timestamp = int(time.mktime(time.strptime(time_str, "%Y-%m-%d %H:%M")))
         self.__schedule[timestamp] = reason
+
+    def dump(self, path = os.environ["LOCALAPPDATA"] + "\\alarm.json"):
+        with open(path, "w", encoding="utf-8") as file:
+            json.dump(self.__schedule, file)
+
+    def load(self, path = os.environ["LOCALAPPDATA"] + "\\alarm.json"):
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as file:
+                schedule_json = json.load(file)
+                for key, value in schedule_json.items():
+                    key_int = int(key)
+                    timestamp = int(time.time())
+                    if key_int > timestamp:
+                        self.__schedule[key_int] = value
+        else:
+            self.__schedule = {}
