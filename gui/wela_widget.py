@@ -119,6 +119,9 @@ class WelaWidget(QWidget):
     def __clear_whiteboard(self):
         self.__whiteboard.clear()
 
+    def __reset_memory(self):
+        self.__conversation_thread.reset_memory()
+
     def __schedule(self, time_str, reason):
         self.__alarm.schedule(time_str, reason)
 
@@ -241,10 +244,13 @@ class WelaWidget(QWidget):
         paste_to_whiteboard_action.triggered.connect(self.__paste_to_whiteboard)
         clear_whiteboard_action = QAction("清空白板", self)
         clear_whiteboard_action.triggered.connect(self.__clear_whiteboard)
+        reset_memory_action = QAction("重置记忆", self)
+        reset_memory_action.triggered.connect(self.__reset_memory)
 
         self.__context_menu = QMenu(self)
         self.__context_menu.addAction(paste_to_whiteboard_action)
         self.__context_menu.addAction(clear_whiteboard_action)
+        self.__context_menu.addAction(reset_memory_action)
         self.__context_menu.addAction(exit_action)
 
         tray_icon = QSystemTrayIcon(self)

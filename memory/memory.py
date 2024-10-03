@@ -22,6 +22,10 @@ class Memory(ABC):
     def get_messages(self, message: List[Message]) -> List[Message]:
         pass
 
+    @abstractmethod
+    def reset_memory(self):
+        pass
+
 __all__ = [
     "Memory"
 ]

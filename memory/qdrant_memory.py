@@ -135,6 +135,14 @@ class QdrantMemory(Memory):
 
         return [scored_point.payload["message"] for scored_point in scored_points]
 
+    def reset_memory(self):
+        self.__client.delete_collection(self.memory_key)
+
+        self.__client.create_collection(
+            collection_name=self.memory_key,
+            vectors_config=VectorParams(size=512, distance=Distance.COSINE),
+        )
+
 __all__ = [
     "QdrantMemory",
     "unique",

@@ -10,6 +10,7 @@ from flask import request
 from flask import make_response
 from typing import Any
 from typing import Dict
+from typing import Tuple
 from typing import Optional
 from xml.etree import ElementTree
 from expiringdict import ExpiringDict
@@ -67,7 +68,7 @@ def load_config(config_file_path: str = "config.yaml") -> Dict[str, Any]:
 
     return config
 
-def parse_user_input() -> None:
+def parse_user_input() -> Tuple[str, str, str]:
     user_input = input("> ")
     if user_input.startswith("@image:"):
         remaining_input = user_input[len("@image:"):].strip()
@@ -81,9 +82,12 @@ def parse_user_input() -> None:
             encoded_image = encode_clipboard_image()
         else:
             pass
-        return encoded_image, content
+        return None, encoded_image, content
+    elif user_input.startswith("@cmd:"):
+        remaining_input = user_input[len("@cmd:"):].strip()
+        return remaining_input, None, None
     else:
-        return None, user_input
+        return None, None, user_input
 
 def build_meta(config: Dict, callback: ToolCallback = None, stream: bool=True, max_tokens: Optional[int] = NOT_GIVEN) -> Meta:
     if config.get("proxy", None):
@@ -153,21 +157,29 @@ def gh_process():
     else:
         nonce = request.args.get("nonce")
         if nonce in cache:
-            if cache[nonce] != "":
-                to_user = msg_tree.find("ToUserName").text
-                gh_response = make_response(output_xml % (from_user, to_user, str(int(time.time())), cache[nonce]))
-                gh_response.content_type = "application/xml"
-                return gh_response
-            else:
-                time.sleep(5)
-                return "success"
+            for _ in range(5100):
+                if cache[nonce] != "":
+                    to_user = msg_tree.find("ToUserName").text
+                    gh_response = make_response(output_xml % (from_user, to_user, str(int(time.time())), cache[nonce]))
+                    gh_response.content_type = "application/xml"
+                    return gh_response
+                else:
+                    time.sleep(0.001)
+            return "success"
         else:
             cache[nonce] = ""
             msg_type = msg_tree.find("MsgType").text
             if msg_type == "text":
                 msg_content = msg_tree.find("Content").text
-                input_message = UserMessageTemplate(StringPromptTemplate(msg_content)).to_message()
-                meta_response = meta.predict(__input__=[input_message])
+                if msg_content == "@cmd:reset memory":
+                    meta.reset_memory()
+                    meta_response = {
+                        "role": "assistant",
+                        "content": "MEMORY RESET"
+                    }
+                else:
+                    input_message = UserMessageTemplate(StringPromptTemplate(msg_content)).to_message()
+                    meta_response = meta.predict(__input__=[input_message])
             elif msg_type == "image":
                 pic_url = msg_tree.find("PicUrl").text
                 input_message = UserMessageTemplate(ContentTemplate(
@@ -194,7 +206,7 @@ if __name__ == "__main__":
         app.exec_()
     elif "--wechat" in sys.argv[1:]:
         config = load_config()
-        meta = build_meta(config, stream=False, max_tokens=72)
+        meta = build_meta(config, stream=False, max_tokens=144)
         wechat_token = config.get("wechat_token")
         openids = config.get("openids")
         cache = ExpiringDict(max_len=100, max_age_seconds=50)
@@ -202,28 +214,33 @@ if __name__ == "__main__":
     else:
         config = load_config()
         meta = build_meta(config=config, callback=ToolMessage())
-        image_url, text_content = parse_user_input()
+        command, image_url, text_content = parse_user_input()
         while True:
-            input_message = UserMessageTemplate(ContentTemplate(
-                [
-                    ImageContentTemplate(image_url=image_url),
-                    TextContentTemplate(StringPromptTemplate(text_content))
-                ]
-            )).to_message()
-            response = meta.predict(__input__=[input_message])
-            if not meta.model.streaming:
-                print("- {}".format(response["content"]))
+            if command:
+                if command=="reset memory":
+                    meta.reset_memory()
+                    print("- MEMORY RESET")
             else:
-                processed_token_count = 0
-                is_before_first_token = True
-                for token in response:
-                    if is_before_first_token:
-                        print("- ", end="")
-                        is_before_first_token = False
-                    print(token["content"][processed_token_count:], end="")
-                    processed_token_count = len(token["content"])
-                print("")
+                input_message = UserMessageTemplate(ContentTemplate(
+                    [
+                        ImageContentTemplate(image_url=image_url),
+                        TextContentTemplate(StringPromptTemplate(text_content))
+                    ]
+                )).to_message()
+                response = meta.predict(__input__=[input_message])
+                if not meta.model.streaming:
+                    print("- {}".format(response["content"]))
+                else:
+                    processed_token_count = 0
+                    is_before_first_token = True
+                    for token in response:
+                        if is_before_first_token:
+                            print("- ", end="")
+                            is_before_first_token = False
+                        print(token["content"][processed_token_count:], end="")
+                        processed_token_count = len(token["content"])
+                    print("")
             if need_continue:
-                image_url, text_content = parse_user_input()
+                command, image_url, text_content = parse_user_input()
             else:
                 break

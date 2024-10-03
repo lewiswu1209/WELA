@@ -59,6 +59,9 @@ class ConversationAgent(LLMAgent):
                         yield message
                 return stream()
 
+    def reset_memory(self):
+        self.__memory.reset_memory()
+
 __all__ = [
     "ConversationAgent"
 ]
