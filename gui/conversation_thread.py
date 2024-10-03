@@ -29,6 +29,9 @@ class ConversationThread(QThread, ToolCallback):
     def set_meta(self, meta: Meta) -> None:
         self.__meta = meta
 
+    def reset_memory(self):
+        self.__meta.reset_memory()
+
     def run(self) -> None:
         self.conversation_started.emit()
         response = self.__meta.predict(__input__=self.__messages)
