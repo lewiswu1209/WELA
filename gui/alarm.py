@@ -2,6 +2,7 @@
 import os
 import json
 import time
+import platform
 
 from PyQt5.QtCore import QTimer
 from PyQt5.QtCore import QObject
@@ -27,11 +28,21 @@ class Alarm(QTimer):
         timestamp = int(time.mktime(time.strptime(time_str, "%Y-%m-%d %H:%M")))
         self.__schedule[timestamp] = reason
 
-    def dump(self, path = os.environ["LOCALAPPDATA"] + "\\alarm.json"):
+    def dump(self, path = None):
+        if not path:
+            if platform.system() == "Windows":
+                path = os.environ["LOCALAPPDATA"] + "\\alarm.json"
+            elif platform.system() == "Linux":
+                path = os.environ["HOME"] + "/.alarm.json"
         with open(path, "w", encoding="utf-8") as file:
             json.dump(self.__schedule, file)
 
-    def load(self, path = os.environ["LOCALAPPDATA"] + "\\alarm.json"):
+    def load(self, path = None):
+        if not path:
+            if platform.system() == "Windows":
+                path = os.environ["LOCALAPPDATA"] + "\\alarm.json"
+            elif platform.system() == "Linux":
+                path = os.environ["HOME"] + "/.alarm.json"
         if os.path.exists(path):
             with open(path, "r", encoding="utf-8") as file:
                 schedule_json = json.load(file)

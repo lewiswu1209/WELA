@@ -4,7 +4,10 @@ import time
 from typing import Any
 from typing import List
 from typing import Union
+from typing import Optional
 from typing import Generator
+from openai._types import NotGiven
+from openai._types import NOT_GIVEN
 
 from memory.memory import Memory
 from toolkit.toolkit import Toolkit
@@ -28,7 +31,8 @@ class Meta(ConversationAgent):
         memory: Memory = None,
         toolkit: Toolkit = None,
         input_key="__input__",
-        output_key="__output__"
+        output_key="__output__",
+        max_tokens: Optional[int] | NotGiven = NOT_GIVEN
     ) -> None:
         if isinstance(model, OpenAIChat):
             message_template_list: List[MessageTemplate] = []
@@ -47,7 +51,8 @@ class Meta(ConversationAgent):
             toolkit=toolkit,
             memory=memory,
             input_key=input_key,
-            output_key=output_key
+            output_key=output_key,
+            max_tokens=max_tokens
         )
 
     def predict(self, **kwargs: Any) -> Union[Any, Generator[Any, None, None]]:

@@ -1,8 +1,19 @@
 
 import os
 import sys
+import time
 import yaml
+import hashlib
 
+from flask import Flask
+from flask import request
+from flask import make_response
+from typing import Any
+from typing import Dict
+from typing import Optional
+from xml.etree import ElementTree
+from expiringdict import ExpiringDict
+from openai._types import NOT_GIVEN
 from qdrant_client import QdrantClient
 from PyQt5.QtWidgets import QApplication
 
@@ -16,7 +27,7 @@ from toolkit.quit import Quit
 from toolkit.toolkit import Toolkit
 from toolkit.weather import Weather
 from toolkit.definition import Definition
-from toolkit.browsing.browsing import Browsing
+# from toolkit.browsing.browsing import Browsing
 from schema.template.openai_chat import encode_image
 from schema.template.openai_chat import encode_clipboard_image
 from schema.template.openai_chat import ContentTemplate
@@ -26,6 +37,14 @@ from schema.template.openai_chat import ImageContentTemplate
 from schema.template.prompt_template import StringPromptTemplate
 
 need_continue = True
+app = Flask(__name__)
+output_xml = '''<xml>
+    <ToUserName><![CDATA[%s]]></ToUserName>
+    <FromUserName><![CDATA[%s]]></FromUserName>
+    <CreateTime>%s</CreateTime>
+    <MsgType><![CDATA[text]]></MsgType>
+    <Content><![CDATA[%s]]></Content>
+</xml>'''
 
 class ToolMessage(ToolCallback):
     def before_tool_call(self, event: ToolEvent) -> None:
@@ -41,7 +60,14 @@ class ToolMessage(ToolCallback):
         else:
             print("工具'{}'的结果:\n{}".format(event.tool_name, event.result))
 
-def parse_user_input():
+def load_config(config_file_path: str = "config.yaml") -> Dict[str, Any]:
+    config = None
+    with open(os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), config_file_path), encoding="utf-8") as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
+
+    return config
+
+def parse_user_input() -> None:
     user_input = input("> ")
     if user_input.startswith("@image:"):
         remaining_input = user_input[len("@image:"):].strip()
@@ -59,10 +85,7 @@ def parse_user_input():
     else:
         return None, user_input
 
-def build_meta(config_file_path: str = "config.yaml", callback: ToolCallback = None):
-    with open(os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), config_file_path), encoding="utf-8") as f:
-        config = yaml.load(f, Loader=yaml.FullLoader)
-
+def build_meta(config: Dict, callback: ToolCallback = None, stream: bool=True, max_tokens: Optional[int] = NOT_GIVEN) -> Meta:
     if config.get("proxy", None):
         proxies = {
             "http": config.get("proxy"),
@@ -98,11 +121,70 @@ def build_meta(config_file_path: str = "config.yaml", callback: ToolCallback = N
     else:
         memory = None
 
-    meta_model = OpenAIChat(model_name=config.get("openai").get("model_name"),stream=True, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
-    tool_model = OpenAIChat(model_name=config.get("openai").get("model_name"),stream=False, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
-    toolkit = Toolkit([Quit(), Weather(), Definition(proxies), Browsing(tool_model, proxies)], callback)
+    meta_model = OpenAIChat(model_name=config.get("openai").get("model_name"), stream=stream, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
+    # tool_model = OpenAIChat(model_name=config.get("openai").get("model_name"), stream=False, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
+    # toolkit = Toolkit([Quit(), Weather(), Definition(proxies), Browsing(tool_model, proxies)], callback)
+    toolkit = Toolkit([Quit(), Weather(), Definition(proxies)], callback)
 
-    return Meta(model=meta_model, prompt=config.get("prompt"),memory=memory, toolkit=toolkit)
+    return Meta(model=meta_model, prompt=config.get("prompt"), memory=memory, toolkit=toolkit, max_tokens=max_tokens)
+
+@app.route("/gh", methods=["GET"])
+def gh_verify():
+    signature = request.args.get("signature")
+    timestamp = request.args.get("timestamp")
+    nonce = request.args.get("nonce")
+    echostr = request.args.get("echostr")
+
+    temp = [timestamp, nonce, wechat_token]
+    temp.sort()
+    temp = "".join(temp)
+
+    if (hashlib.sha1(temp.encode("utf8")).hexdigest() == signature):
+        return echostr
+    else:
+        return "error", 403
+
+@app.route("/gh", methods=["POST"])
+def gh_process():
+    msg_tree = ElementTree.fromstring(request.data)
+    from_user = msg_tree.find("FromUserName").text
+    if from_user not in openids:
+        return "success"
+    else:
+        nonce = request.args.get("nonce")
+        if nonce in cache:
+            if cache[nonce] != "":
+                to_user = msg_tree.find("ToUserName").text
+                gh_response = make_response(output_xml % (from_user, to_user, str(int(time.time())), cache[nonce]))
+                gh_response.content_type = "application/xml"
+                return gh_response
+            else:
+                time.sleep(5)
+                return "success"
+        else:
+            cache[nonce] = ""
+            msg_type = msg_tree.find("MsgType").text
+            if msg_type == "text":
+                msg_content = msg_tree.find("Content").text
+                input_message = UserMessageTemplate(StringPromptTemplate(msg_content)).to_message()
+                meta_response = meta.predict(__input__=[input_message])
+            elif msg_type == "image":
+                pic_url = msg_tree.find("PicUrl").text
+                input_message = UserMessageTemplate(ContentTemplate(
+                    [
+                        ImageContentTemplate(image_url=pic_url),
+                        TextContentTemplate(StringPromptTemplate(""))
+                    ]
+                )).to_message()
+                meta_response = meta.predict(__input__=[input_message])
+            else:
+                meta_response = {
+                    "role": "assistant",
+                    "content": "暂不支持此类消息"
+                }
+            cache[nonce] = meta_response["content"]
+            time.sleep(5)
+            return "success"
 
 if __name__ == "__main__":
     if "--gui" in sys.argv[1:]:
@@ -110,30 +192,38 @@ if __name__ == "__main__":
         widget: WelaWidget = WelaWidget()
         widget.show()
         app.exec_()
+    elif "--wechat" in sys.argv[1:]:
+        config = load_config()
+        meta = build_meta(config, stream=False, max_tokens=72)
+        wechat_token = config.get("wechat_token")
+        openids = config.get("openids")
+        cache = ExpiringDict(max_len=100, max_age_seconds=50)
+        app.run(host=config.get("host"), port=config.get("port"), debug=False)
     else:
-        meta = build_meta(callback=ToolMessage())
-        encoded_image, user_text = parse_user_input()
+        config = load_config()
+        meta = build_meta(config=config, callback=ToolMessage())
+        image_url, text_content = parse_user_input()
         while True:
             input_message = UserMessageTemplate(ContentTemplate(
                 [
-                    ImageContentTemplate(image_url=encoded_image),
-                    TextContentTemplate(StringPromptTemplate(user_text))
+                    ImageContentTemplate(image_url=image_url),
+                    TextContentTemplate(StringPromptTemplate(text_content))
                 ]
             )).to_message()
             response = meta.predict(__input__=[input_message])
             if not meta.model.streaming:
                 print("- {}".format(response["content"]))
             else:
-                pre_len = 0
+                processed_token_count = 0
                 is_before_first_token = True
                 for token in response:
                     if is_before_first_token:
                         print("- ", end="")
                         is_before_first_token = False
-                    print(token["content"][pre_len:], end="")
-                    pre_len = len(token["content"])
+                    print(token["content"][processed_token_count:], end="")
+                    processed_token_count = len(token["content"])
                 print("")
             if need_continue:
-                encoded_image, user_text = parse_user_input()
+                image_url, text_content = parse_user_input()
             else:
                 break

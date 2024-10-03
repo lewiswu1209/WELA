@@ -1,4 +1,9 @@
 
+host: "127.0.0.1"
+port: 80
+wechat_token: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+openids:
+  - xxxxxxxxxxxxxxxxxxxxxxxxxx
 proxy: http://127.0.0.1:8080
 memory:
   memory_key: memory

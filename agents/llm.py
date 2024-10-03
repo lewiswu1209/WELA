@@ -4,6 +4,7 @@ from typing import List
 from typing import Union
 from typing import Optional
 from typing import Generator
+from openai._types import NotGiven
 from openai._types import NOT_GIVEN
 
 from agents.agent import Agent
@@ -25,7 +26,8 @@ class LLMAgent(Agent):
         toolkit: Toolkit = None,
         input_key: str = "__input__",
         output_key: str = "__output__",
-        max_loop: int = 5
+        max_loop: int = 5,
+        max_tokens: Optional[int] | NotGiven = NOT_GIVEN
     ) -> None:
         self.__model: Model = model
         self.__prompt_template: PromptTemplate = prompt_template
@@ -33,6 +35,7 @@ class LLMAgent(Agent):
         self.__toolkit: Toolkit = toolkit
         super().__init__(input_key, output_key)
         self.__max_loop: int = max_loop
+        self.__max_tokens: int = max_tokens
 
         if self.__stop is None:
             if isinstance(self.__model, OpenAIChat):
@@ -52,9 +55,9 @@ class LLMAgent(Agent):
             if not self.__model.streaming:
                 for i in range(self.__max_loop):
                     if i == self.__max_loop - 1 or not self.__toolkit:
-                        response_message = self.__model.predict(messages, stop=self.__stop)[0]
+                        response_message = self.__model.predict(messages, stop=self.__stop, max_tokens=self.__max_tokens)[0]
                     else:
-                        response_message = self.__model.predict(messages, stop=self.__stop, tools=self.__toolkit.to_tools_param())[0]
+                        response_message = self.__model.predict(messages, stop=self.__stop, max_tokens=self.__max_tokens, tools=self.__toolkit.to_tools_param())[0]
                     if "tool_calls" in response_message:
                         tool_calls: List[ToolCall] = response_message["tool_calls"]
                         messages.append(response_message)
@@ -74,9 +77,9 @@ class LLMAgent(Agent):
                 def stream() -> Generator[Any, None, None]:
                     for i in range(self.__max_loop):
                         if i == self.__max_loop - 1 or not self.__toolkit:
-                            response_message = self.__model.predict(messages, stop=self.__stop)
+                            response_message = self.__model.predict(messages, stop=self.__stop, max_tokens=self.__max_tokens)
                         else:
-                            response_message = self.__model.predict(messages, stop=self.__stop, tools=self.__toolkit.to_tools_param())
+                            response_message = self.__model.predict(messages, stop=self.__stop, max_tokens=self.__max_tokens, tools=self.__toolkit.to_tools_param())
                         final_response_message = {"role": "assistant"}
                         for delta_message_list in response_message:
                             delta_message = delta_message_list[0]

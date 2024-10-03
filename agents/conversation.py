@@ -1,7 +1,10 @@
 
 from typing import Any
 from typing import Union
+from typing import Optional
 from typing import Generator
+from openai._types import NotGiven
+from openai._types import NOT_GIVEN
 
 from agents.llm import LLMAgent
 from models.model import Model
@@ -19,8 +22,9 @@ class ConversationAgent(LLMAgent):
         input_key: str = "__input__",
         output_key: str = "__output__",
         max_loop: int = 5,
+        max_tokens: Optional[int] | NotGiven = NOT_GIVEN
     ) -> None:
-        super().__init__(model, prompt_template, None, toolkit, input_key, output_key, max_loop)
+        super().__init__(model, prompt_template, None, toolkit, input_key, output_key, max_loop, max_tokens)
         self.__memory: Memory = memory
 
     def predict(self, **kwargs: Any) -> Union[Any, Generator[Any, None, None]]:

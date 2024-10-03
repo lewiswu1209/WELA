@@ -19,7 +19,7 @@ from toolkit.toolkit import Toolkit
 from toolkit.weather import Weather
 from toolkit.definition import Definition
 from toolkit.alarm_clock import AlarmClock
-from toolkit.browsing.browsing import Browsing
+# from toolkit.browsing.browsing import Browsing
 from memory.window_qdrant_memory import WindowQdrantMemory
 
 class InitializerSignal(QObject):
@@ -77,7 +77,8 @@ class Initializer(QObject):
         else:
             proxies = None
         tool_model = OpenAIChat(model_name=config.get("openai").get("model_name"),stream=False, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
-        toolkit = Toolkit([AlarmClock(), Quit(), Weather(), Definition(proxies), Browsing(tool_model, proxies)], None)
+        # toolkit = Toolkit([AlarmClock(), Quit(), Weather(), Definition(proxies), Browsing(tool_model, proxies)], None)
+        toolkit = Toolkit([AlarmClock(), Quit(), Weather(), Definition(proxies)], None)
         self.signal.chat_updated.emit("加载人物性格")
         meta_model = OpenAIChat(model_name=config.get("openai").get("model_name"),stream=True, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
         meta = Meta(model=meta_model, prompt=config.get("prompt"),memory=memory, toolkit=toolkit)
