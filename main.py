@@ -8,6 +8,7 @@ import hashlib
 from flask import Flask
 from flask import request
 from flask import make_response
+from gevent import pywsgi
 from typing import Any
 from typing import Dict
 from typing import Tuple
@@ -210,7 +211,8 @@ if __name__ == "__main__":
         wechat_token = config.get("wechat_token")
         openids = config.get("openids")
         cache = ExpiringDict(max_len=100, max_age_seconds=50)
-        app.run(host=config.get("host"), port=config.get("port"), debug=False)
+        # app.run(host=config.get("host"), port=config.get("port"), debug=False)
+        pywsgi.WSGIServer((config.get("host"), config.get("port")), app).serve_forever()
     else:
         config = load_config()
         meta = build_meta(config=config, callback=ToolMessage())
