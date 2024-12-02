@@ -4,6 +4,7 @@ import sys
 import time
 import yaml
 import hashlib
+import markdown
 
 from flask import Flask
 from flask import request
@@ -152,30 +153,32 @@ def gh_verify():
 def gh_process():
     msg_tree = ElementTree.fromstring(request.data)
     from_user = msg_tree.find("FromUserName").text
+    to_user = msg_tree.find("ToUserName").text
     if from_user not in openids:
         return "success"
     else:
         nonce = request.args.get("nonce")
         if nonce in cache:
-            for _ in range(5100):
+            for _ in range(4000):
                 if cache[nonce] != "":
-                    to_user = msg_tree.find("ToUserName").text
                     gh_response = make_response(output_xml % (from_user, to_user, str(int(time.time())), cache[nonce]))
                     gh_response.content_type = "application/xml"
                     return gh_response
                 else:
                     time.sleep(0.001)
-            return "success"
+            gh_response = make_response(output_xml % (from_user, to_user, str(int(time.time())), f"https://wela.aetheriaverse.us.kg/msg?nonce={nonce}"))
+            gh_response.content_type = "application/xml"
+            return gh_response
         else:
             cache[nonce] = ""
             msg_type = msg_tree.find("MsgType").text
             if msg_type == "text":
                 msg_content = msg_tree.find("Content").text
-                if msg_content == "@cmd:reset memory":
+                if msg_content == "@cmd:reset":
                     meta.reset_memory()
                     meta_response = {
                         "role": "assistant",
-                        "content": "MEMORY RESET"
+                        "content": "Resetting completed successfully."
                     }
                 else:
                     input_message = UserMessageTemplate(StringPromptTemplate(msg_content)).to_message()
@@ -198,6 +201,19 @@ def gh_process():
             time.sleep(5)
             return "success"
 
+@app.route("/msg", methods=["GET"])
+def gh_msg():
+    nonce = request.args.get("nonce")
+    if nonce in cache:
+        html = markdown.markdown(cache[nonce])
+        gh_response = make_response(html)
+        # gh_response.content_type = "application/xml"
+        return gh_response
+    else:
+        gh_response = make_response("参数无效")
+        # gh_response.content_type = "application/xml"
+        return gh_response
+
 if __name__ == "__main__":
     if "--gui" in sys.argv[1:]:
         app: QApplication = QApplication(sys.argv)
@@ -206,10 +222,10 @@ if __name__ == "__main__":
         app.exec_()
     elif "--wechat" in sys.argv[1:]:
         config = load_config()
-        meta = build_meta(config, stream=False, max_tokens=144)
+        meta = build_meta(config, stream=False)
         wechat_token = config.get("wechat_token")
         openids = config.get("openids")
-        cache = ExpiringDict(max_len=100, max_age_seconds=50)
+        cache = ExpiringDict(max_len=100, max_age_seconds=360)
         app.run(host=config.get("host"), port=config.get("port"), debug=False)
     else:
         config = load_config()
@@ -217,9 +233,9 @@ if __name__ == "__main__":
         command, image_url, text_content = parse_user_input()
         while True:
             if command:
-                if command=="reset memory":
+                if command=="reset":
                     meta.reset_memory()
-                    print("- MEMORY RESET")
+                    print("- Resetting completed successfully.")
             else:
                 input_message = UserMessageTemplate(ContentTemplate(
                     [
