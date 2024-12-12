@@ -29,6 +29,7 @@ from toolkit.quit import Quit
 from toolkit.toolkit import Toolkit
 from toolkit.weather import Weather
 from toolkit.definition import Definition
+from toolkit.duckduckgo import DuckDuckGo
 # from toolkit.browsing.browsing import Browsing
 from schema.template.openai_chat import encode_image
 from schema.template.openai_chat import encode_clipboard_image
@@ -128,8 +129,7 @@ def build_meta(config: Dict, callback: ToolCallback = None, stream: bool=True, m
 
     meta_model = OpenAIChat(model_name=config.get("openai").get("model_name"), stream=stream, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
     # tool_model = OpenAIChat(model_name=config.get("openai").get("model_name"), stream=False, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
-    # toolkit = Toolkit([Quit(), Weather(), Definition(proxies), Browsing(tool_model, proxies)], callback)
-    toolkit = Toolkit([Quit(), Weather(), Definition(proxies)], callback)
+    toolkit = Toolkit([Quit(), Weather(), Definition(proxies), DuckDuckGo(proxies)], callback)
 
     return Meta(model=meta_model, prompt=config.get("prompt"), memory=memory, toolkit=toolkit, max_tokens=max_tokens)
 
