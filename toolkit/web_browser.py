@@ -5,14 +5,13 @@ from typing import Any
 from typing import Dict
 from curl_cffi import requests
 
+from agents.llm import LLMAgent
 from toolkit.toolkit import Tool
 from models.openai_chat import OpenAIChat
 from schema.template.openai_chat import ChatTemplate
 from schema.template.openai_chat import UserMessageTemplate
 from schema.template.openai_chat import SystemMessageTemplate
-from schema.template.prompt_template import PromptTemplate
-
-from agents.llm import LLMAgent
+from schema.template.prompt_template import StringPromptTemplate
 
 class WebBrowser(Tool):
 
@@ -40,20 +39,25 @@ class WebBrowser(Tool):
 
             html: str = requests.get(url, impersonate="chrome120", proxies=self.__proxies).content.decode(encoding="utf-8")
             content = trafilatura.extract(html)
+            # metadata= trafilatura.extract_metadata(html)
+
+            # title = metadata.title
+            # author= metadata.author
+            # date  = metadata.date
 
             message_template_list = [
                 UserMessageTemplate(
-                    PromptTemplate(content)
+                    StringPromptTemplate(content)
                 ),
                 UserMessageTemplate(
-                    PromptTemplate("Based on the above content, extract as comprehensively as possible the content that helps answer the following question: {question}")
+                    StringPromptTemplate("Based on the above content, extract as comprehensively as possible the content that helps answer the following question: {question}")
                 ),
                 SystemMessageTemplate(
-                    PromptTemplate("Output in the following format:\nContent_1\nContent_2\n...")
+                    StringPromptTemplate("Output in the following format:\nContent_1\nContent_2\n...")
                 )
             ]
             chat_template = ChatTemplate(message_template_list=message_template_list)
-            agent = LLMAgent(model=self.__model, chat_template=chat_template)
+            agent = LLMAgent(model=self.__model, prompt_template=chat_template)
             ans = agent.predict(question=question)["content"]
             return ans
 
