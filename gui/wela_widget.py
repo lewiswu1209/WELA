@@ -208,6 +208,7 @@ class WelaWidget(QWidget):
             self.__change_status(status="sleeping")
         else:
             self.__change_status(status="normal")
+        self.__chat_box.start_hide_timer(9000)
 
     def __on_alarm(self, timestamp, reason):
         date_time = time.strftime("%Y-%m-%d %H:%M", time.gmtime(timestamp))
@@ -262,6 +263,7 @@ class WelaWidget(QWidget):
         self.setAcceptDrops(True)
         self.__is_initialize_completed = True
         self.__chat_box.set_border_color("LightSkyBlue")
+        self.__chat_box.start_hide_timer(3000)
 
         self.__alarm = Alarm(self)
         self.__alarm.alarm.connect(self.__on_alarm)

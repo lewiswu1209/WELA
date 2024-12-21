@@ -5,6 +5,7 @@ import webbrowser
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
 from PyQt5.QtCore import QUrl
+from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtWidgets import QVBoxLayout
 from PyQt5.QtWidgets import QTextBrowser
@@ -35,6 +36,15 @@ class ChatBox(QWidget):
         self.layout().addWidget(self.__text_edit)
 
         self.__is_max_width = False
+
+        self.__hide_timer = QTimer()
+
+    def start_hide_timer(self, msec: int):
+        self.__hide_timer.timeout.connect(self.__on_hide_timer)
+        self.__hide_timer.start(msec)
+
+    def __on_hide_timer(self):
+        self.hide()
 
     def __on_anchor_clicked(self, url: QUrl) -> None:
         webbrowser.open(url.toString())
