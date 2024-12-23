@@ -166,7 +166,7 @@ def gh_process():
                     return gh_response
                 else:
                     time.sleep(0.001)
-            gh_response = make_response(output_xml % (from_user, to_user, str(int(time.time())), f"https://wela.aetheriaverse.us.kg/msg?nonce={nonce}"))
+            gh_response = make_response(output_xml % (from_user, to_user, str(int(time.time())), f"<a href=\"https://wela.aetheriaverse.us.kg/msg?nonce={nonce}\">稍等一下点这里</a>"))
             gh_response.content_type = "application/xml"
             return gh_response
         else:
@@ -205,14 +205,14 @@ def gh_process():
 def gh_msg():
     nonce = request.args.get("nonce")
     if nonce in cache:
-        html = markdown.markdown(cache[nonce])
-        gh_response = make_response(html)
-        # gh_response.content_type = "application/xml"
-        return gh_response
+        if cache[nonce] != "":
+            html = markdown.markdown(cache[nonce])
+            gh_response = make_response(html)
+        else:
+            gh_response = make_response("对方还在输入……")
     else:
         gh_response = make_response("参数无效")
-        # gh_response.content_type = "application/xml"
-        return gh_response
+    return gh_response
 
 if __name__ == "__main__":
     if "--gui" in sys.argv[1:]:
