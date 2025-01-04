@@ -166,9 +166,11 @@ def gh_process():
                     return gh_response
                 else:
                     time.sleep(0.001)
-            gh_response = make_response(output_xml % (from_user, to_user, str(int(time.time())), f"<a href=\"https://wela.aetheriaverse.us.kg/msg?nonce={nonce}\">稍等一下点这里</a>"))
-            gh_response.content_type = "application/xml"
-            return gh_response
+            # gh_response = make_response(output_xml % (from_user, to_user, str(int(time.time())), f"<a href=\"https://wela.aetheriaverse.us.kg/msg?nonce={nonce}\">稍等一下点这里</a>"))
+            # gh_response.content_type = "application/xml"
+            # return gh_response
+            time.sleep(5)
+            return "success"
         else:
             cache[nonce] = ""
             msg_type = msg_tree.find("MsgType").text
@@ -222,7 +224,7 @@ if __name__ == "__main__":
         app.exec_()
     elif "--wechat" in sys.argv[1:]:
         config = load_config()
-        meta = build_meta(config, stream=False)
+        meta = build_meta(config, stream=False, max_tokens=170)
         wechat_token = config.get("wechat_token")
         openids = config.get("openids")
         cache = ExpiringDict(max_len=100, max_age_seconds=360)
