@@ -46,8 +46,10 @@ class WelaWidget(QWidget):
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
+        self.__is_chatting = False
         self.__is_mouse_dragging = False
         self.__is_initialize_completed = False
+        self.__speech_recognition_thread = None
 
         self.setLayout(QVBoxLayout(self))
         self.setAutoFillBackground(False)
@@ -56,10 +58,7 @@ class WelaWidget(QWidget):
 
         self.__label: QLabel = None
 
-        if 0 <= datetime.now().hour <= 5:
-            self.__change_status(status="sleeping")
-        else:
-            self.__change_status(status="normal")
+        self.__change_status(status="working")
 
         self.__chat_box = ChatBox()
 
@@ -78,11 +77,12 @@ class WelaWidget(QWidget):
         self.__initializer.signal.meta_created.connect(self.__on_meta_created)
         self.__initializer.signal.speech_recognition_created.connect(self.__on_speech_recognition_created)
         self.__initializer.signal.whiteboard_created.connect(self.__on_whiteboard_created)
-        self.__initializer.signal.chat_updated.connect(self.__on_chat_updated)
+        self.__initializer.signal.conversation_started.connect(self.__on_chat_started)
+        self.__initializer.signal.conversation_changed.connect(self.__on_chat_updated)
+        self.__initializer.signal.conversation_finished.connect(self.__on_chat_finished)
         self.__initializer.signal.initialize_completed.connect(self.__on_initialize_completed)
         self.__initializer.moveToThread(self.__initialize_thread)
         self.__initialize_thread.started.connect(self.__initializer.initialize)
-        self.__chat_box.set_border_color("LightSalmon")
         self.__initialize_thread.start()
 
     def __change_status(self, status = "normal"):
@@ -183,6 +183,7 @@ class WelaWidget(QWidget):
 
     def __on_chat_started(self) -> None:
         self.__chat_box.reset()
+        self.__is_chatting = True
         self.__change_status(status="working")
         self.__on_chat_updated("对方正在输入……")
         self.__chat_box.set_border_color("LightSalmon")
@@ -204,10 +205,7 @@ class WelaWidget(QWidget):
 
     def __on_chat_finished(self) -> None:
         self.__chat_box.set_border_color("LightSkyBlue")
-        if 0 <= datetime.now().hour <= 5:
-            self.__change_status(status="sleeping")
-        else:
-            self.__change_status(status="normal")
+        self.__is_chatting = False
         self.__chat_box.start_hide_timer(9000)
 
     def __on_alarm(self, timestamp, reason):
@@ -238,6 +236,13 @@ class WelaWidget(QWidget):
     def __on_whiteboard_created(self, whiteboard: Whiteboard) -> None:
         self.__whiteboard = whiteboard
 
+    def __on_refresh(self) -> None:
+        if not self.__is_chatting:
+            if 0 <= datetime.now().hour <= 5:
+                self.__change_status(status="sleeping")
+            else:
+                self.__change_status(status="normal")
+
     def __on_initialize_completed(self) -> None:
         exit_action = QAction("退出", self)
         exit_action.triggered.connect(self.close)
@@ -259,14 +264,14 @@ class WelaWidget(QWidget):
         tray_icon.setContextMenu(self.__context_menu)
         tray_icon.show()
 
-        self.__speech_recognition_thread.start()
+        if self.__speech_recognition_thread:
+            self.__speech_recognition_thread.start()
         self.setAcceptDrops(True)
         self.__is_initialize_completed = True
-        self.__chat_box.set_border_color("LightSkyBlue")
-        self.__chat_box.start_hide_timer(3000)
 
         self.__alarm = Alarm(self)
         self.__alarm.alarm.connect(self.__on_alarm)
+        self.__alarm.refresh.connect(self.__on_refresh)
         self.__alarm.load()
         self.__alarm.start(1000)
 

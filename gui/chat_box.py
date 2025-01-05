@@ -40,8 +40,7 @@ class ChatBox(QWidget):
         self.__hide_timer = QTimer()
 
     def start_hide_timer(self, msec: int):
-        self.__hide_timer.timeout.connect(self.__on_hide_timer)
-        self.__hide_timer.start(msec)
+        self.__hide_timer.singleShot(msec, self.__on_hide_timer)
 
     def __on_hide_timer(self):
         self.hide()
