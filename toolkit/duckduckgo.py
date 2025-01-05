@@ -1,6 +1,4 @@
 
-import random
-
 from typing import Any
 from typing import Dict
 from duckduckgo_search import DDGS
@@ -27,7 +25,7 @@ class DuckDuckGo(Tool):
         proxy = self.__proxies["http"] if self.__proxies else None
         try:
             with DDGS(proxy=proxy) as ddgs:
-                for r in ddgs.text(keywords, "cn-zh", "off", random.choice(["api", "html", "lite"]), max_results=10):
+                for r in ddgs.text(keywords, safesearch="off", max_results=10):
                     title = r["title"]
                     href = r["href"]
                     body = r["body"]

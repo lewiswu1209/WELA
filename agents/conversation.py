@@ -60,7 +60,8 @@ class ConversationAgent(LLMAgent):
                 return stream()
 
     def reset_memory(self):
-        self.__memory.reset_memory()
+        if self.__memory:
+            self.__memory.reset_memory()
 
 __all__ = [
     "ConversationAgent"

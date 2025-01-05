@@ -36,23 +36,25 @@ def sort_key_score(scored_point: ScoredPoint) -> float:
 class QdrantMemory(Memory):
     def __init__(self, memory_key: str, qdrant_client: QdrantClient, limit: int=10, score_threshold: Optional[float] = None) -> None:
         super().__init__(memory_key)
+
+        self.__score_threshold: Optional[float] = score_threshold
+        self.__limit: int = limit
+        self.__client: QdrantClient = qdrant_client
+
         self.__pipeline = pipeline(
             Tasks.sentence_embedding,
             model="iic/nlp_gte_sentence-embedding_chinese-small",
             sequence_length=512
         )
-        self.__score_threshold: Optional[float] = score_threshold
-        self.__limit: int = limit
-        self.__client: QdrantClient = qdrant_client
         try:
             self.__client.create_collection(
                 collection_name=self.memory_key,
                 vectors_config=VectorParams(size=512, distance=Distance.COSINE),
             )
-        except UnexpectedResponse as _:
-            pass
-        except ValueError:
-            pass
+        except UnexpectedResponse as e:
+            if e.status_code != 409:
+                # 409 means collection already exists
+                raise e
 
     def __text2embedding(self, text_list: List[str]) -> Any:
         inputs = {

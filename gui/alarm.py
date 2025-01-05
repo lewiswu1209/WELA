@@ -11,6 +11,7 @@ from PyQt5.QtCore import pyqtSignal
 class Alarm(QTimer):
 
     alarm = pyqtSignal(int, str)
+    refresh = pyqtSignal()
 
     def __init__(self, parent: QObject | None = ...) -> None:
         super().__init__(parent)
@@ -19,6 +20,7 @@ class Alarm(QTimer):
         self.__schedule = {}
 
     def __on_timer(self):
+        self.refresh.emit()
         timestamp = int(time.time())
         reason = self.__schedule.get(timestamp, None)
         if reason:
