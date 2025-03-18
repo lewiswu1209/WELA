@@ -11,6 +11,7 @@ from qdrant_client.models import Distance
 from qdrant_client.models import PointStruct
 from qdrant_client.models import VectorParams
 from qdrant_client.models import ExtendedPointId
+from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.conversions.common_types import ScoredPoint
 
 from memory.memory import Memory
@@ -45,10 +46,16 @@ class QdrantMemory(Memory):
             model="iic/nlp_gte_sentence-embedding_chinese-small",
             sequence_length=512
         )
-        self.__client.create_collection(
-            collection_name=self.memory_key,
-            vectors_config=VectorParams(size=512, distance=Distance.COSINE),
-        )
+
+        try:
+            self.__client.create_collection(
+                collection_name=self.memory_key,
+                vectors_config=VectorParams(size=512, distance=Distance.COSINE),
+            )
+        except UnexpectedResponse as e:
+            if e.status_code != 409:
+                # 409 means collection already exists
+                raise e
 
     def __text2embedding(self, text_list: List[str]) -> Any:
         inputs = {

@@ -17,6 +17,7 @@ from xml.etree import ElementTree
 from expiringdict import ExpiringDict
 from openai._types import NOT_GIVEN
 from qdrant_client import QdrantClient
+from qdrant_client.http.exceptions import UnexpectedResponse
 from PyQt5.QtWidgets import QApplication
 
 from agents.meta import Meta
@@ -116,14 +117,16 @@ def build_meta(config: Dict, callback: ToolCallback = None, stream: bool=True, m
             )
         else:
             qdrant_client = QdrantClient(":memory:")
-
-        memory = WindowQdrantMemory(
-            memory_key=memory_key, 
-            qdrant_client=qdrant_client,
-            limit=limit,
-            window_size=window_size,
-            score_threshold=score_threshold
-        )
+        try:
+            memory = WindowQdrantMemory(
+                memory_key=memory_key, 
+                qdrant_client=qdrant_client,
+                limit=limit,
+                window_size=window_size,
+                score_threshold=score_threshold
+            )
+        except (UnexpectedResponse, ValueError):
+            memory = None
     else:
         memory = None
 

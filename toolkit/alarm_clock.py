@@ -14,7 +14,7 @@ class AlarmClock(Tool):
             },
             reason={
                 "type": "string",
-                "description": "Why you set this alarm. IMPORTANT!!! You SHOULD take note of all information that might be needed."
+                "description": "The reason for setting the alarm. IMPORTANT!!! You SHOULD take note of all information that might be needed."
             }
         )
 

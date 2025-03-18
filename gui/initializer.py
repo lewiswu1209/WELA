@@ -72,10 +72,7 @@ class Initializer(QObject):
                     window_size=window_size,
                     score_threshold=score_threshold
                 )
-            except UnexpectedResponse as _:
-                self.signal.conversation_changed.emit("记忆模块加载失败，将在没有记忆模块的情况下工作")
-                memory = None
-            except ValueError as _:
+            except (UnexpectedResponse, ValueError) as _:
                 self.signal.conversation_changed.emit("记忆模块加载失败，将在没有记忆模块的情况下工作")
                 memory = None
         else:
