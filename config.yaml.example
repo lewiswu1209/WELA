@@ -17,6 +17,17 @@ memory:
     # type: local
     # path: /path/to/data/
     type: memory
+retriever:
+  retriever_key: retriever
+  limit: 4
+  score_threshold: 0.6
+  qdrant:
+    type: cloud
+    url: https://xxxxxx-xxxxx-xxxxx-xxxx-xxxxxxxxx.us-east.aws.cloud.qdrant.io
+    api_key: <your-api-key>
+    # type: local
+    # path: data
+    # type: memory
 openai:
   api_key: <your-api-key>
   base_url: https://api.openai.com/v1/

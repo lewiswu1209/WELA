@@ -23,7 +23,7 @@ class Memory(ABC):
         pass
 
     @abstractmethod
-    def reset_memory(self):
+    def reset_memory(self) -> None:
         pass
 
 __all__ = [

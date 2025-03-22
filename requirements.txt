@@ -7,7 +7,7 @@ openai
 pillow
 pyyaml
 pyaudio
-datasets
+datasets<3.4.0
 keyboard
 markdown
 curl_cffi

@@ -19,18 +19,18 @@ class Alarm(QTimer):
         self.timeout.connect(self.__on_timer)
         self.__schedule = {}
 
-    def __on_timer(self):
+    def __on_timer(self) -> None:
         self.refresh.emit()
         timestamp = int(time.time())
         reason = self.__schedule.get(timestamp, None)
         if reason:
             self.alarm.emit(timestamp, reason)
 
-    def schedule(self, time_str, reason):
+    def schedule(self, time_str, reason) -> None:
         timestamp = int(time.mktime(time.strptime(time_str, "%Y-%m-%d %H:%M")))
         self.__schedule[timestamp] = reason
 
-    def dump(self, path = None):
+    def dump(self, path = None) -> None:
         if not path:
             if platform.system() == "Windows":
                 path = os.environ["LOCALAPPDATA"] + "\\alarm.json"
@@ -39,7 +39,7 @@ class Alarm(QTimer):
         with open(path, "w", encoding="utf-8") as file:
             json.dump(self.__schedule, file)
 
-    def load(self, path = None):
+    def load(self, path = None) -> None:
         if not path:
             if platform.system() == "Windows":
                 path = os.environ["LOCALAPPDATA"] + "\\alarm.json"

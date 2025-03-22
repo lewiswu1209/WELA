@@ -23,10 +23,6 @@ from schema.prompt.openai_chat import AIMessage
 from schema.prompt.openai_chat import UserMessage
 from schema.prompt.openai_chat import ToolMessage
 from schema.prompt.openai_chat import SystemMessage
-# from schema.template.openai_chat import ContentTemplate
-# from schema.template.openai_chat import TextContentTemplate
-# from schema.template.openai_chat import UserMessageTemplate
-# from schema.template.openai_chat import ImageContentTemplate
 from schema.template.prompt_template import PromptTemplate
 from schema.template.prompt_template import StringPromptTemplate
 

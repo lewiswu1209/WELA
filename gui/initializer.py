@@ -22,6 +22,7 @@ from toolkit.definition import Definition
 from toolkit.duckduckgo import DuckDuckGo
 from toolkit.web_browser import WebBrowser
 from toolkit.alarm_clock import AlarmClock
+from retriever.qdrant_retriever import QdrantRetriever
 from memory.window_qdrant_memory import WindowQdrantMemory
 
 class InitializerSignal(QObject):
@@ -35,12 +36,12 @@ class InitializerSignal(QObject):
 
 class Initializer(QObject):
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.signal = InitializerSignal()
 
     @pyqtSlot()
-    def initialize(self):
+    def initialize(self) -> None:
         self.signal.conversation_started.emit()
         self.signal.conversation_changed.emit("开始初始化")
         with open(os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), "config.yaml"), encoding="utf-8") as f:
@@ -78,6 +79,32 @@ class Initializer(QObject):
         else:
             self.signal.conversation_changed.emit("未设置记忆模块，将在没有记忆模块的情况下工作")
             memory = None
+
+        self.signal.conversation_changed.emit("加载知识库")
+        if config.get("retriever", None):
+            retriever_key = config.get("retriever").get("retriever_key", "retriever")
+            limit = config.get("retriever").get("limit", 4)
+            score_threshold = config.get("retriever").get("score_threshold", 0.6)
+            if config.get("retriever").get("qdrant").get("type") == "cloud":
+                qdrant_client = QdrantClient(
+                    url=config.get("retriever").get("qdrant").get("url"),
+                    api_key=config.get("retriever").get("qdrant").get("api_key")
+                )
+            elif config.get("retriever").get("qdrant").get("type") == "local":
+                qdrant_client = QdrantClient(
+                    path=config.get("retriever").get("qdrant").get("path")
+                )
+            else:
+                qdrant_client = QdrantClient(":memory:")
+            try:
+                retriever = QdrantRetriever(retriever_key=retriever_key, qdrant_client=qdrant_client)
+            except (UnexpectedResponse, ValueError):
+                self.signal.conversation_changed.emit("知识库加载失败，将在没有知识库的情况下工作")
+                retriever = None
+        else:
+            self.signal.conversation_changed.emit("未设置知识库，将在没有知识库的情况下工作")
+            retriever = None
+
         self.signal.conversation_changed.emit("加载工具箱")
         if config.get("proxy", None):
             proxies = {
@@ -90,7 +117,7 @@ class Initializer(QObject):
         toolkit = Toolkit([AlarmClock(), Quit(), Weather(), Definition(proxies), DuckDuckGo(proxies), WebBrowser(tool_model, proxies)], None)
         self.signal.conversation_changed.emit("加载人物性格")
         meta_model = OpenAIChat(model_name=config.get("openai").get("model_name"),stream=True, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
-        meta = Meta(model=meta_model, prompt=config.get("prompt"),memory=memory, toolkit=toolkit)
+        meta = Meta(model=meta_model, prompt=config.get("prompt"),memory=memory, toolkit=toolkit, retriever=retriever)
         self.signal.meta_created.emit(meta)
         self.signal.conversation_changed.emit("加载语音识别")
         try:

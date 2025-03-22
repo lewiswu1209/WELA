@@ -57,7 +57,6 @@ class Plan_And_Execute(Tool):
         task_list = deque()
         compiled_tasks = deque()
 
-        # Step 1: Plan the tasks
         result = Planner(self.__model).predict(
             objective=objective
         )["content"]
@@ -65,7 +64,6 @@ class Plan_And_Execute(Tool):
         task_list.extend(steps)
         compiled_tasks.append({"task_name": "Make a todo list", "result": result})
 
-        # Step 2: Execute the tasks
         while task_list:
             current_task = task_list.popleft()
             print("Current task: ", current_task)

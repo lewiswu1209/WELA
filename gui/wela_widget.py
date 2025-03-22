@@ -85,7 +85,7 @@ class WelaWidget(QWidget):
         self.__initialize_thread.started.connect(self.__initializer.initialize)
         self.__initialize_thread.start()
 
-    def __change_status(self, status = "normal"):
+    def __change_status(self, status = "normal") -> None:
         folder_path = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), f"res/{status}")
         files = os.listdir(folder_path)
         file = os.path.join(folder_path, random.choice(files))
@@ -112,17 +112,17 @@ class WelaWidget(QWidget):
         self.__conversation_thread.set_messages([input_message])
         self.__conversation_thread.start()
 
-    def __paste_to_whiteboard(self):
+    def __paste_to_whiteboard(self) -> None:
         encoded_image = encode_clipboard_image()
         self.__whiteboard.append(encoded_image)
 
-    def __clear_whiteboard(self):
+    def __clear_whiteboard(self) -> None:
         self.__whiteboard.clear()
 
-    def __reset_memory(self):
+    def __reset_memory(self) -> None:
         self.__conversation_thread.reset_memory()
 
-    def __schedule(self, time_str, reason):
+    def __schedule(self, time_str, reason) -> None:
         self.__alarm.schedule(time_str, reason)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
@@ -158,7 +158,7 @@ class WelaWidget(QWidget):
                 self.__start_conversation(text)
         event.accept()
 
-    def dragEnterEvent(self, event: QDragEnterEvent):
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         if event.mimeData().hasUrls():
             files = [u.toLocalFile() for u in event.mimeData().urls()]
             for file in files:
@@ -167,7 +167,7 @@ class WelaWidget(QWidget):
                     return
         event.ignore()
 
-    def dropEvent(self, event: QDropEvent):
+    def dropEvent(self, event: QDropEvent) -> None:
         for url in event.mimeData().urls():
             file = url.toLocalFile()
             if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
@@ -208,7 +208,7 @@ class WelaWidget(QWidget):
         self.__is_chatting = False
         self.__chat_box.start_hide_timer(9000)
 
-    def __on_alarm(self, timestamp, reason):
+    def __on_alarm(self, timestamp, reason) -> None:
         date_time = time.strftime("%Y-%m-%d %H:%M", time.gmtime(timestamp))
         input_message = SystemMessageTemplate(
             StringPromptTemplate(

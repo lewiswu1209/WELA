@@ -39,10 +39,10 @@ class ChatBox(QWidget):
 
         self.__hide_timer = QTimer()
 
-    def start_hide_timer(self, msec: int):
+    def start_hide_timer(self, msec: int) -> None:
         self.__hide_timer.singleShot(msec, self.__on_hide_timer)
 
-    def __on_hide_timer(self):
+    def __on_hide_timer(self) -> None:
         self.hide()
 
     def __on_anchor_clicked(self, url: QUrl) -> None:

@@ -39,11 +39,6 @@ class WebBrowser(Tool):
 
             html: str = requests.get(url, impersonate="chrome120", proxies=self.__proxies).content.decode(encoding="utf-8")
             content = trafilatura.extract(html)
-            # metadata= trafilatura.extract_metadata(html)
-
-            # title = metadata.title
-            # author= metadata.author
-            # date  = metadata.date
 
             message_template_list = [
                 UserMessageTemplate(

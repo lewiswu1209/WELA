@@ -32,6 +32,7 @@ from toolkit.weather import Weather
 from toolkit.definition import Definition
 from toolkit.duckduckgo import DuckDuckGo
 from toolkit.web_browser import WebBrowser
+from retriever.qdrant_retriever import QdrantRetriever
 from schema.template.openai_chat import encode_image
 from schema.template.openai_chat import encode_clipboard_image
 from schema.template.openai_chat import ContentTemplate
@@ -130,11 +131,33 @@ def build_meta(config: Dict, callback: ToolCallback = None, stream: bool=True, m
     else:
         memory = None
 
+    if config.get("retriever", None):
+        retriever_key = config.get("retriever").get("retriever_key", "retriever")
+        limit = config.get("retriever").get("limit", 4)
+        score_threshold = config.get("retriever").get("score_threshold", 0.6)
+        if config.get("retriever").get("qdrant").get("type") == "cloud":
+            qdrant_client = QdrantClient(
+                url=config.get("retriever").get("qdrant").get("url"),
+                api_key=config.get("retriever").get("qdrant").get("api_key")
+            )
+        elif config.get("retriever").get("qdrant").get("type") == "local":
+            qdrant_client = QdrantClient(
+                path=config.get("retriever").get("qdrant").get("path")
+            )
+        else:
+            qdrant_client = QdrantClient(":memory:")
+        try:
+            retriever = QdrantRetriever(retriever_key=retriever_key, qdrant_client=qdrant_client)
+        except (UnexpectedResponse, ValueError):
+            retriever = None
+    else:
+        retriever = None
+
     meta_model = OpenAIChat(model_name=config.get("openai").get("model_name"), stream=stream, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
     tool_model = OpenAIChat(model_name=config.get("openai").get("model_name"), stream=False, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
     toolkit = Toolkit([Quit(), Weather(), Definition(proxies), DuckDuckGo(proxies), WebBrowser(tool_model, proxies)], callback)
 
-    return Meta(model=meta_model, prompt=config.get("prompt"), memory=memory, toolkit=toolkit, max_tokens=max_tokens)
+    return Meta(model=meta_model, prompt=config.get("prompt"), memory=memory, toolkit=toolkit, retriever=retriever, max_tokens=max_tokens)
 
 @app.route("/gh", methods=["GET"])
 def gh_verify():
@@ -169,9 +192,6 @@ def gh_process():
                     return gh_response
                 else:
                     time.sleep(0.001)
-            # gh_response = make_response(output_xml % (from_user, to_user, str(int(time.time())), f"<a href=\"https://wela.aetheriaverse.us.kg/msg?nonce={nonce}\">稍等一下点这里</a>"))
-            # gh_response.content_type = "application/xml"
-            # return gh_response
             time.sleep(5)
             return "success"
         else:

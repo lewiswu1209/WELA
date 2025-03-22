@@ -29,7 +29,7 @@ class ConversationThread(QThread, ToolCallback):
     def set_meta(self, meta: Meta) -> None:
         self.__meta = meta
 
-    def reset_memory(self):
+    def reset_memory(self) -> None:
         self.__meta.reset_memory()
         self.conversation_started.emit()
         self.conversation_changed.emit("记忆已重置")

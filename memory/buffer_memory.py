@@ -15,7 +15,7 @@ class BufferMemory(Memory):
     def get_messages(self, _: List[Message]) -> List[Message]:
         return self._message_history
 
-    def reset_memory(self):
+    def reset_memory(self) -> None:
         self._message_history.clear()
 
 __all__ = [

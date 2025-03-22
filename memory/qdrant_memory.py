@@ -3,21 +3,19 @@ from uuid import uuid4
 from typing import Any
 from typing import List
 from typing import Optional
-from modelscope.pipelines import pipeline
-from modelscope.utils.constant import Tasks
 from qdrant_client import QdrantClient
 from qdrant_client.models import Record
 from qdrant_client.models import Distance
 from qdrant_client.models import PointStruct
 from qdrant_client.models import VectorParams
 from qdrant_client.models import ExtendedPointId
-from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.conversions.common_types import ScoredPoint
 
 from memory.memory import Memory
+from embedding.text_embedding import text_embedding
 from schema.prompt.openai_chat import Message
 
-def unique(scored_points: List[ScoredPoint]):
+def unique(scored_points: List[ScoredPoint]) -> List[ScoredPoint]:
     seen_uuids = set()
     unique_scored_points: List[ScoredPoint] = []
     scored_points = sorted(scored_points, key=sort_key_id, reverse=True)
@@ -41,27 +39,11 @@ class QdrantMemory(Memory):
         self.__limit: int = limit
         self.__client: QdrantClient = qdrant_client
 
-        self.__pipeline = pipeline(
-            Tasks.sentence_embedding,
-            model="iic/nlp_gte_sentence-embedding_chinese-small",
-            sequence_length=512
-        )
-
-        try:
+        if not self.__client.collection_exists(collection_name=self.memory_key):
             self.__client.create_collection(
                 collection_name=self.memory_key,
-                vectors_config=VectorParams(size=512, distance=Distance.COSINE),
+                vectors_config=VectorParams(size=512, distance=Distance.COSINE)
             )
-        except UnexpectedResponse as e:
-            if e.status_code != 409:
-                # 409 means collection already exists
-                raise e
-
-    def __text2embedding(self, text_list: List[str]) -> Any:
-        inputs = {
-            "source_sentence": text_list
-        }
-        return self.__pipeline(input=inputs)["text_embedding"]
 
     def add_message(self, message: Message) -> Any:
         payload={
@@ -75,22 +57,25 @@ class QdrantMemory(Memory):
             for content in message["content"]:
                 if content["type"] == "text":
                     sentences.append(content["text"])
-        sentences_embedding = self.__text2embedding(sentences)
-        for sentence_embedding in sentences_embedding:
-            vector = [float(x) for x in sentence_embedding]
-            id = self.__client.count(collection_name=self.memory_key).count + 1
-            point = PointStruct(
-                id=id,
-                vector=vector,
-                payload=payload
+        sentences_embedding = text_embedding.embed(sentences)
+
+        count = self.__client.count(collection_name=self.memory_key).count
+        points = [
+            PointStruct(
+                id = count + idx,
+                vector = [float(x) for x in sentence_embedding],
+                payload = payload
             )
-            self.__client.upsert(
-                collection_name=self.memory_key,
-                points=[point]
-            )
+            for idx, sentence_embedding in enumerate(sentences_embedding)
+        ]
+
+        self.__client.upsert(
+            collection_name=self.memory_key,
+            points=points
+        )
 
     def _get_points_by_sentence(self, sentence: str) -> List[ScoredPoint]:
-        sentence_embedding = self.__text2embedding([sentence])[0]
+        sentence_embedding = text_embedding.embed([sentence])[0]
         vector = [float(x) for x in sentence_embedding]
         return self.__client.search(
             collection_name=self.memory_key,
@@ -121,7 +106,7 @@ class QdrantMemory(Memory):
             scored_points.extend(self._get_points_by_message(message))
         return scored_points
 
-    def _get_last_n_points(self, n) -> List[ScoredPoint]:
+    def _get_last_n_points(self, n: int) -> List[ScoredPoint]:
         ids: List[int] = [id + 1 for id in range(0, self.__client.count(collection_name=self.memory_key).count)][-n:]
         records: List[Record] = self.__client.retrieve(
             collection_name=self.memory_key,
@@ -138,7 +123,7 @@ class QdrantMemory(Memory):
 
         return [scored_point.payload["message"] for scored_point in scored_points]
 
-    def reset_memory(self):
+    def reset_memory(self) -> None:
         self.__client.delete_collection(self.memory_key)
 
         self.__client.create_collection(

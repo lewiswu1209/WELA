@@ -14,6 +14,7 @@ from toolkit.toolkit import Toolkit
 from models.model import Model
 from models.openai_chat import OpenAIChat
 from agents.conversation import ConversationAgent
+from retriever.retriever import Retriever
 from schema.template.openai_chat import ChatTemplate
 from schema.template.openai_chat import MessageTemplate
 from schema.template.openai_chat import MessagePlaceholder
@@ -30,8 +31,9 @@ class Meta(ConversationAgent):
         prompt: str = default_prompt,
         memory: Memory = None,
         toolkit: Toolkit = None,
-        input_key="__input__",
-        output_key="__output__",
+        retriever: Retriever = None,
+        input_key: str = "__input__",
+        output_key: str = "__output__",
         max_tokens: Optional[int] | NotGiven = NOT_GIVEN
     ) -> None:
         if isinstance(model, OpenAIChat):
@@ -39,6 +41,8 @@ class Meta(ConversationAgent):
             message_template_list.append(SystemMessageTemplate(StringPromptTemplate(prompt)))
             if memory:
                 message_template_list.append(MessagePlaceholder(placeholder_key = memory.memory_key))
+            if retriever:
+                message_template_list.append(MessagePlaceholder(placeholder_key = retriever.retriever_key))
             message_template_list.append(SystemMessageTemplate(StringPromptTemplate("{__system_hint__}")))
             message_template_list.append(MessagePlaceholder(placeholder_key = input_key))
             prompt_template: PromptTemplate = ChatTemplate(message_template_list)
@@ -50,6 +54,7 @@ class Meta(ConversationAgent):
             prompt_template=prompt_template,
             toolkit=toolkit,
             memory=memory,
+            retriever=retriever,
             input_key=input_key,
             output_key=output_key,
             max_tokens=max_tokens
