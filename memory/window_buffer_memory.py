@@ -1,16 +1,20 @@
 
-from schema.prompt.openai_chat import Message
+from typing import TypeVar
+
 from memory.buffer_memory import BufferMemory
 
-class WindowBufferMemory(BufferMemory):
-    def __init__(self, memory_key: str, window_size: int = 10) -> None:
-        self.__window_size: int = window_size
-        super().__init__(memory_key)
+T = TypeVar("T")
 
-    def add_message(self, message: Message) -> None:
-        messages = super().get_messages(None)
-        messages.append(message)
-        self._message_history = messages[-self.__window_size:]
+class WindowBufferMemory(BufferMemory[T]):
+
+    def __init__(self, memory_key: str, window_size: int) -> None:
+        super().__init__(memory_key)
+        self._window_size: int = window_size
+
+    def save_context(self, context: T) -> None:
+        buffer = self.get_contexts(None)
+        buffer.append(context)
+        self._buffer = buffer[-self._window_size:]
 
 __all__ = [
     "WindowBufferMemory"

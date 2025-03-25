@@ -5,7 +5,7 @@ from agents.agent import Agent
 from schema.prompt.openai_chat import Message
 
 class SimpleSequentialAgent(Agent):
-    def __init__(self, agents: List[Agent], input_key: str = "__input__", output_key: str = "__output__") -> None:
+    def __init__(self, *, agents: List[Agent], input_key: str = "__input__", output_key: str = "__output__") -> None:
         self.__agents: List[Agent] = agents
         super().__init__(input_key, output_key)
 

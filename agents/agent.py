@@ -8,6 +8,7 @@ from typing import Generator
 class Agent(ABC):
 
     def __init__(self,
+        *,
         input_key: str,
         output_key: str
     ) -> None:

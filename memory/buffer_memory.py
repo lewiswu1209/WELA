@@ -1,22 +1,25 @@
 
 from typing import List
+from typing import TypeVar
 
 from memory.memory import Memory
-from schema.prompt.openai_chat import Message
 
-class BufferMemory(Memory):
+T = TypeVar("T")
+
+class BufferMemory(Memory[T]):
+
     def __init__(self, memory_key: str) -> None:
-        self._message_history: List[Message] = []
         super().__init__(memory_key)
+        self._buffer: List[T] = []
 
-    def add_message(self, message: Message) -> None:
-        self._message_history.append(message)
+    def save_context(self, context: T) -> None:
+        self._buffer.append(context)
 
-    def get_messages(self, _: List[Message]) -> List[Message]:
-        return self._message_history
+    def get_contexts(self, _: List[T]) -> List[T]:
+        return self._buffer
 
     def reset_memory(self) -> None:
-        self._message_history.clear()
+        self._buffer.clear()
 
 __all__ = [
     "BufferMemory"

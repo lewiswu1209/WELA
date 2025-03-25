@@ -1,8 +1,15 @@
 
 from abc import ABC
 from abc import abstractmethod
+from typing import List
+from typing import Union
+from typing import TypeVar
+from typing import Generic
+from typing import Generator
 
-class Model(ABC):
+T = TypeVar("T")
+
+class Model(ABC, Generic[T]):
 
     @property
     @abstractmethod
@@ -12,6 +19,10 @@ class Model(ABC):
     @property
     @abstractmethod
     def streaming(self) -> bool:
+        pass
+
+    @abstractmethod
+    def predict(self, **kargs) -> Union[List[T], Generator[List[T], None, None]]:
         pass
 
 __all__ = [

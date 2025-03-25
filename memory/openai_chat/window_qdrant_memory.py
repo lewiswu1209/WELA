@@ -4,10 +4,10 @@ from typing import Optional
 
 from qdrant_client import QdrantClient
 
-from memory.qdrant_memory import QdrantMemory
-from memory.qdrant_memory import unique
-from memory.qdrant_memory import sort_key_id
-from memory.qdrant_memory import sort_key_score
+from memory.openai_chat.qdrant_memory import QdrantMemory
+from memory.openai_chat.qdrant_memory import unique
+from memory.openai_chat.qdrant_memory import sort_key_id
+from memory.openai_chat.qdrant_memory import sort_key_score
 from schema.prompt.openai_chat import Message
 
 class WindowQdrantMemory(QdrantMemory):
@@ -16,8 +16,8 @@ class WindowQdrantMemory(QdrantMemory):
         self.__limit: int = limit
         self.__window_size: int = window_size
 
-    def get_messages(self, message_list: List[Message]) -> List[Message]:
-        scored_points = self._get_points_by_message_list(message_list)
+    def get_contexts(self, contexts: List[Message]) -> List[Message]:
+        scored_points = self._get_points_by_message_list(contexts)
         scored_points = scored_points + self._get_last_n_points(n=self.__window_size)
         scored_points = unique(scored_points)
         scored_points = sorted(scored_points, key=sort_key_score)

@@ -25,7 +25,6 @@ from gui.wela_widget import WelaWidget
 from models.openai_chat import OpenAIChat
 from callback.event import ToolEvent
 from callback.callback import ToolCallback
-from memory.window_qdrant_memory import WindowQdrantMemory
 from toolkit.quit import Quit
 from toolkit.toolkit import Toolkit
 from toolkit.weather import Weather
@@ -40,6 +39,7 @@ from schema.template.openai_chat import TextContentTemplate
 from schema.template.openai_chat import UserMessageTemplate
 from schema.template.openai_chat import ImageContentTemplate
 from schema.template.prompt_template import StringPromptTemplate
+from memory.openai_chat.window_qdrant_memory import WindowQdrantMemory
 
 need_continue = True
 app = Flask(__name__)

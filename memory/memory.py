@@ -3,10 +3,13 @@ from abc import ABC
 from abc import abstractmethod
 from typing import Any
 from typing import List
+from typing import TypeVar
+from typing import Generic
 
-from schema.prompt.openai_chat import Message
+T = TypeVar("T")
 
-class Memory(ABC):
+class Memory(ABC, Generic[T]):
+
     def __init__(self, memory_key: str) -> None:
         self.__memory_key: str = memory_key
 
@@ -15,11 +18,11 @@ class Memory(ABC):
         return self.__memory_key
 
     @abstractmethod
-    def add_message(self, message: Message) -> Any:
+    def save_context(self, context: T) -> Any:
         pass
 
     @abstractmethod
-    def get_messages(self, message: List[Message]) -> List[Message]:
+    def get_contexts(self, contexts: List[T]) -> List[T]:
         pass
 
     @abstractmethod

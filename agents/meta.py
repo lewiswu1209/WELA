@@ -6,8 +6,6 @@ from typing import List
 from typing import Union
 from typing import Optional
 from typing import Generator
-from openai._types import NotGiven
-from openai._types import NOT_GIVEN
 
 from memory.memory import Memory
 from toolkit.toolkit import Toolkit
@@ -27,6 +25,7 @@ default_prompt = '''You are ChatGPT, a large language model trained by OpenAI, b
 class Meta(ConversationAgent):
     def __init__(
         self,
+        *,
         model: Model,
         prompt: str = default_prompt,
         memory: Memory = None,
@@ -34,8 +33,10 @@ class Meta(ConversationAgent):
         retriever: Retriever = None,
         input_key: str = "__input__",
         output_key: str = "__output__",
-        max_tokens: Optional[int] | NotGiven = NOT_GIVEN
+        max_tokens: Optional[int] = None
     ) -> None:
+        assert isinstance(model, OpenAIChat), "Unsupported model type"
+
         if isinstance(model, OpenAIChat):
             message_template_list: List[MessageTemplate] = []
             message_template_list.append(SystemMessageTemplate(StringPromptTemplate(prompt)))
@@ -46,18 +47,16 @@ class Meta(ConversationAgent):
             message_template_list.append(SystemMessageTemplate(StringPromptTemplate("{__system_hint__}")))
             message_template_list.append(MessagePlaceholder(placeholder_key = input_key))
             prompt_template: PromptTemplate = ChatTemplate(message_template_list)
-        else:
-            pass
 
         super().__init__(
-            model=model,
-            prompt_template=prompt_template,
-            toolkit=toolkit,
-            memory=memory,
-            retriever=retriever,
-            input_key=input_key,
-            output_key=output_key,
-            max_tokens=max_tokens
+            model = model,
+            prompt_template = prompt_template,
+            toolkit = toolkit,
+            memory = memory,
+            retriever = retriever,
+            input_key = input_key,
+            output_key = output_key,
+            max_tokens = max_tokens
         )
 
     def predict(self, **kwargs: Any) -> Union[Any, Generator[Any, None, None]]:
