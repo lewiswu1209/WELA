@@ -18,9 +18,10 @@ from models.model import Model
 from schema.prompt.openai_chat import Message
 from schema.prompt.openai_chat import AIMessage
 
-class OpenAIChat(Model):
+class OpenAIChat(Model[Message]):
     def __init__(
         self,
+        *,
         model_name: str = "gpt-3.5-turbo",
         api_key: str | None = None,
         base_url: str | httpx.URL | None = None,
@@ -69,14 +70,31 @@ class OpenAIChat(Model):
             tools=tools
         )
 
-    def predict(
-        self,
-        messages: List[Message],
-        max_tokens: Optional[int] | NotGiven = NOT_GIVEN,
-        n: Optional[int] | NotGiven = NOT_GIVEN,
-        stop: Union[Optional[str], List[str], None] | NotGiven = NOT_GIVEN,
-        tools: List[ChatCompletionToolParam] | NotGiven = NOT_GIVEN
-    ) -> Union[List[Message], Generator[List[Message], None, None]]:
+    def predict(self, **kwargs) -> Union[List[Message], Generator[List[Message], None, None]]:
+        """
+        Generates predictions based on the provided messages and optional parameters.
+        Args:
+            **kwargs: Arbitrary keyword arguments.
+                - messages (List[Message]): Required. The list of messages to generate predictions for.
+                - max_tokens (Optional[int] | NotGiven): Optional. The maximum number of tokens to generate.
+                - n (Optional[int] | NotGiven): Optional. The number of completions to generate.
+                - stop (Union[Optional[str], List[str], None] | NotGiven): Optional. The stop sequence(s) to end the generation.
+                - tools (List[ChatCompletionToolParam] | NotGiven): Optional. The tools to use for chat completion.
+        Returns:
+            Union[List[Message], Generator[List[Message], None, None]]:
+                - If streaming is disabled, returns a list of message dictionaries.
+                - If streaming is enabled, returns a generator that yields lists of delta dictionaries.
+        Raises:
+            AssertionError: If the "messages" key is not present in kwargs.
+        """
+        assert "messages" in kwargs, "messages is required"
+
+        messages: List[Message] = kwargs["messages"]
+        max_tokens: Optional[int] | NotGiven = kwargs.get("max_tokens", NOT_GIVEN)
+        n: Optional[int] | NotGiven = kwargs.get("n", NOT_GIVEN)
+        stop: Union[Optional[str], List[str], None] | NotGiven = kwargs.get("stop", NOT_GIVEN)
+        tools: List[ChatCompletionToolParam] | NotGiven = kwargs.get("tools", NOT_GIVEN)
+
         try:
             completions = self.__create(
                 messages=messages,

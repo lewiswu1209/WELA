@@ -3,8 +3,6 @@ from typing import Any
 from typing import Union
 from typing import Optional
 from typing import Generator
-from openai._types import NotGiven
-from openai._types import NOT_GIVEN
 
 from agents.llm import LLMAgent
 from models.model import Model
@@ -17,6 +15,7 @@ from schema.template.prompt_template import PromptTemplate
 
 class ConversationAgent(LLMAgent):
     def __init__(self,
+        *,
         model: Model,
         prompt_template: PromptTemplate,
         toolkit: Toolkit = None,
@@ -25,9 +24,19 @@ class ConversationAgent(LLMAgent):
         input_key: str = "__input__",
         output_key: str = "__output__",
         max_loop: int = 5,
-        max_tokens: Optional[int] | NotGiven = NOT_GIVEN
+        max_tokens: Optional[int] = None
     ) -> None:
-        super().__init__(model, prompt_template, None, toolkit, input_key, output_key, max_loop, max_tokens)
+        assert isinstance(model, OpenAIChat), "Unsupported model type"
+
+        super().__init__(
+            model = model,
+            prompt_template = prompt_template,
+            toolkit = toolkit,
+            input_key = input_key,
+            output_key = output_key,
+            max_loop = max_loop,
+            max_tokens = max_tokens
+        )
         self.__memory: Memory = memory
         self.__retriever: Retriever = retriever
 
@@ -81,14 +90,6 @@ class ConversationAgent(LLMAgent):
                         self.__memory.add_message(message)
                     self.__memory.add_message(final_output_messsage)
             return stream()
-        else:
-            if not self.model.streaming:
-                return output_message
-            else:
-                def stream() -> Generator[Any, None, None]:
-                    for message in output_message:
-                        yield message
-                return stream()
 
     def reset_memory(self) -> None:
         if self.__memory:

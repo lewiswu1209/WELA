@@ -4,7 +4,6 @@ from typing import List
 from typing import Union
 from typing import Optional
 from typing import Generator
-from openai._types import NotGiven
 from openai._types import NOT_GIVEN
 
 from agents.agent import Agent
@@ -20,6 +19,7 @@ from schema.template.prompt_template import PromptTemplate
 class LLMAgent(Agent):
 
     def __init__(self,
+        *,
         model: Model,
         prompt_template: PromptTemplate,
         stop: Union[Optional[str], List[str], None] = None,
@@ -27,19 +27,23 @@ class LLMAgent(Agent):
         input_key: str = "__input__",
         output_key: str = "__output__",
         max_loop: int = 5,
-        max_tokens: Optional[int] | NotGiven = NOT_GIVEN
+        max_tokens: Optional[int] = None
     ) -> None:
+        assert isinstance(model, OpenAIChat), "Unsupported model type"
+
         self.__model: Model = model
         self.__prompt_template: PromptTemplate = prompt_template
         self.__stop: Union[Optional[str], List[str], None] = stop
         self.__toolkit: Toolkit = toolkit
-        super().__init__(input_key, output_key)
+        super().__init__(input_key = input_key, output_key = output_key)
         self.__max_loop: int = max_loop
         self.__max_tokens: int = max_tokens
 
-        if self.__stop is None:
-            if isinstance(self.__model, OpenAIChat):
+        if isinstance(self.__model, OpenAIChat):
+            if self.__stop is None:
                 self.__stop = NOT_GIVEN
+            if self.__max_tokens is None:
+                self.__max_tokens = NOT_GIVEN
 
     @property
     def model(self) -> Model:
@@ -55,9 +59,18 @@ class LLMAgent(Agent):
             if not self.__model.streaming:
                 for i in range(self.__max_loop):
                     if i == self.__max_loop - 1 or not self.__toolkit:
-                        response_message = self.__model.predict(messages, stop=self.__stop, max_tokens=self.__max_tokens)[0]
+                        response_message = self.__model.predict(
+                            messages,
+                            stop = self.__stop,
+                            max_tokens = self.__max_tokens
+                        )[0]
                     else:
-                        response_message = self.__model.predict(messages, stop=self.__stop, max_tokens=self.__max_tokens, tools=self.__toolkit.to_tools_param())[0]
+                        response_message = self.__model.predict(
+                            messages,
+                            stop = self.__stop,
+                            max_tokens = self.__max_tokens,
+                            tools = self.__toolkit.to_tools_param()
+                        )[0]
                     if "tool_calls" in response_message:
                         tool_calls: List[ToolCall] = response_message["tool_calls"]
                         messages.append(response_message)
@@ -65,9 +78,9 @@ class LLMAgent(Agent):
                             tool_result = self.__toolkit.run(tool_call["function"])
                             messages.append(
                                 ToolMessage(
-                                    content=tool_result,
-                                    role="tool",
-                                    tool_call_id=tool_call["id"]
+                                    content = tool_result,
+                                    role = "tool",
+                                    tool_call_id = tool_call["id"]
                                 )
                             )
                     else:
@@ -77,13 +90,22 @@ class LLMAgent(Agent):
                 def stream() -> Generator[Any, None, None]:
                     for i in range(self.__max_loop):
                         if i == self.__max_loop - 1 or not self.__toolkit:
-                            response_message = self.__model.predict(messages, stop=self.__stop, max_tokens=self.__max_tokens)
+                            response_message = self.__model.predict(
+                                messages = messages,
+                                stop = self.__stop,
+                                max_tokens = self.__max_tokens
+                            )
                         else:
-                            response_message = self.__model.predict(messages, stop=self.__stop, max_tokens=self.__max_tokens, tools=self.__toolkit.to_tools_param())
+                            response_message = self.__model.predict(
+                                messages = messages,
+                                stop = self.__stop,
+                                max_tokens = self.__max_tokens,
+                                tools = self.__toolkit.to_tools_param()
+                            )
                         final_response_message = {"role": "assistant"}
                         for delta_message_list in response_message:
                             delta_message = delta_message_list[0]
-                            final_response_message["role"] = delta_message["role"] if "role" in delta_message else final_response_message["role"]
+                            final_response_message["role"] = delta_message.get("role", final_response_message["role"])
                             if "content" not in final_response_message:
                                 final_response_message["content"] = ""
                             if "content" in final_response_message and "content" in delta_message and delta_message["content"]:
@@ -109,19 +131,11 @@ class LLMAgent(Agent):
                                 tool_result = self.__toolkit.run(tool_call["function"])
                                 messages.append(
                                     ToolMessage(
-                                        content=tool_result,
-                                        role="tool",
-                                        tool_call_id=tool_call["id"]
+                                        content = tool_result,
+                                        role = "tool",
+                                        tool_call_id = tool_call["id"]
                                     )
                                 )
-                return stream()
-        else:
-            if not self.__model.streaming:
-                return "This is a test for other model"
-            else:
-                def stream() -> Generator[Any, None, None]:
-                    for i in "This is a test for other model":
-                        yield i
                 return stream()
 
 __all__ = [
