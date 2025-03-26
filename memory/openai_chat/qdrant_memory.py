@@ -31,7 +31,7 @@ def sort_key_id(scored_point: ScoredPoint) -> ExtendedPointId:
 def sort_key_score(scored_point: ScoredPoint) -> float:
     return scored_point.score
 
-class QdrantMemory(Memory):
+class QdrantMemory(Memory[Message]):
     def __init__(self, memory_key: str, qdrant_client: QdrantClient, limit: int=10, score_threshold: Optional[float] = None) -> None:
         super().__init__(memory_key)
 
@@ -45,16 +45,16 @@ class QdrantMemory(Memory):
                 vectors_config=VectorParams(size=512, distance=Distance.COSINE)
             )
 
-    def add_message(self, message: Message) -> Any:
+    def save_context(self, context: Message) -> Any:
         payload={
             "uuid": str(uuid4()),
-            "message": message
+            "message": context
         }
-        if isinstance(message["content"], str):
-            sentences = [message["content"]]
+        if isinstance(context["content"], str):
+            sentences = [context["content"]]
         else:
             sentences = []
-            for content in message["content"]:
+            for content in context["content"]:
                 if content["type"] == "text":
                     sentences.append(content["text"])
         sentences_embedding = text_embedding.embed(sentences)
@@ -114,8 +114,8 @@ class QdrantMemory(Memory):
         )
         return [ScoredPoint(id=record.id, version=record.id-1, score=1.0, payload=record.payload, vector=record.vector) for record in records]
 
-    def get_messages(self, message_list: List[Message]) -> List[Message]:
-        scored_points = self._get_points_by_message_list(message_list)
+    def get_contexts(self, contexts: List[Message]) -> List[Message]:
+        scored_points = self._get_points_by_message_list(contexts)
         scored_points = unique(scored_points)
         scored_points = sorted(scored_points, key=sort_key_score)
         scored_points = scored_points[-self.__limit:]

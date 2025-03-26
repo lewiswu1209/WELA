@@ -23,7 +23,7 @@ from toolkit.duckduckgo import DuckDuckGo
 from toolkit.web_browser import WebBrowser
 from toolkit.alarm_clock import AlarmClock
 from retriever.qdrant_retriever import QdrantRetriever
-from memory.window_qdrant_memory import WindowQdrantMemory
+from memory.openai_chat.window_qdrant_memory import WindowQdrantMemory
 
 class InitializerSignal(QObject):
     meta_created = pyqtSignal(Meta)

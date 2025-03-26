@@ -42,7 +42,7 @@ class ConversationAgent(LLMAgent):
 
     def predict(self, **kwargs: Any) -> Union[Any, Generator[Any, None, None]]:
         if self.__memory:
-            kwargs[self.__memory.memory_key] = self.__memory.get_messages(kwargs[self.input_key])
+            kwargs[self.__memory.memory_key] = self.__memory.get_contexts(kwargs[self.input_key])
 
         if self.__retriever:
             knowladge = []
@@ -77,8 +77,8 @@ class ConversationAgent(LLMAgent):
             if not self.model.streaming:
                 if self.__memory:
                     for message in kwargs[self.input_key]:
-                        self.__memory.add_message(message)
-                    self.__memory.add_message(output_message)
+                        self.__memory.save_context(message)
+                    self.__memory.save_context(output_message)
                 return output_message
             def stream() -> Generator[Any, None, None]:
                 final_output_messsage = None
@@ -87,8 +87,8 @@ class ConversationAgent(LLMAgent):
                     yield message
                 if self.__memory:
                     for message in kwargs[self.input_key]:
-                        self.__memory.add_message(message)
-                    self.__memory.add_message(final_output_messsage)
+                        self.__memory.save_context(message)
+                    self.__memory.save_context(final_output_messsage)
             return stream()
 
     def reset_memory(self) -> None:
