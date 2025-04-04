@@ -5,6 +5,7 @@ import time
 import random
 
 from datetime import datetime
+from functools import partial
 from PyQt5.QtGui import QIcon
 from PyQt5.QtGui import QMovie
 from PyQt5.QtGui import QPixmap
@@ -14,7 +15,9 @@ from PyQt5.QtGui import QDragEnterEvent
 from PyQt5.QtCore import Qt
 from PyQt5.QtCore import QSize
 from PyQt5.QtCore import QPoint
+from PyQt5.QtCore import QLocale
 from PyQt5.QtCore import QThread
+from PyQt5.QtCore import QFileInfo
 from PyQt5.QtWidgets import QMenu
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtWidgets import QAction
@@ -125,6 +128,16 @@ class WelaWidget(QWidget):
     def __schedule(self, time_str, reason) -> None:
         self.__alarm.schedule(time_str, reason)
 
+    def __translate(self, text: str) -> None:
+        system_locale = QLocale.system()
+        language = system_locale.languageToString(system_locale.language())
+        if text:
+            text = f'''Translate the following text to {language}:
+```
+{text}
+```'''
+            self.__start_conversation(text)
+
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.LeftButton:
             self.__is_mouse_dragging = True
@@ -160,19 +173,32 @@ class WelaWidget(QWidget):
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         if event.mimeData().hasUrls():
-            files = [u.toLocalFile() for u in event.mimeData().urls()]
-            for file in files:
-                if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
-                    event.acceptProposedAction()
-                    return
-        event.ignore()
+            files_info = [QFileInfo(url.toLocalFile()) for url in event.mimeData().urls()]
+            for file_info in files_info:
+                if file_info.isFile():
+                    if file_info.suffix().lower() in ['png', 'jpg', 'jpeg', 'gif']:
+                        event.accept()
+        elif event.mimeData().hasText():
+            event.accept()
 
     def dropEvent(self, event: QDropEvent) -> None:
-        for url in event.mimeData().urls():
-            file = url.toLocalFile()
-            if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
-                encoded_image = encode_image(file)
-                self.__whiteboard.append(encoded_image)
+        if event.mimeData().hasUrls():
+            files_info = [QFileInfo(url.toLocalFile()) for url in event.mimeData().urls()]
+            for file_info in files_info:
+                if file_info.isFile():
+                    if file_info.suffix().lower() in ['png', 'jpg', 'jpeg', 'gif']:
+                        encoded_image = encode_image(file_info.filePath())
+                        self.__whiteboard.append(encoded_image)
+        elif event.mimeData().hasText():
+            text = event.mimeData().text()
+            if text:
+                translate_action = QAction("翻译", self)
+                translate_action.triggered.connect(partial(self.__translate, text))
+
+                function_menu = QMenu(self)
+                function_menu.addAction(translate_action)
+
+                function_menu.exec(self.mapToGlobal(event.pos()))
 
     def closeEvent(self, _) -> None:
         self.__alarm.stop()
