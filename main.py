@@ -20,29 +20,29 @@ from qdrant_client import QdrantClient
 from qdrant_client.http.exceptions import UnexpectedResponse
 from PyQt5.QtWidgets import QApplication
 
-from agents.meta import Meta
 from gui.wela_widget import WelaWidget
-from models.openai_chat import OpenAIChat
-from callback.event import ToolEvent
-from callback.callback import ToolCallback
-from toolkit.quit import Quit
-from toolkit.toolkit import Toolkit
-from toolkit.weather import Weather
-from toolkit.definition import Definition
-from toolkit.duckduckgo import DuckDuckGo
-from toolkit.web_browser import WebBrowser
-from retriever.qdrant_retriever import QdrantRetriever
-from schema.template.openai_chat import encode_image
-from schema.template.openai_chat import encode_clipboard_image
-from schema.template.openai_chat import ContentTemplate
-from schema.template.openai_chat import TextContentTemplate
-from schema.template.openai_chat import UserMessageTemplate
-from schema.template.openai_chat import ImageContentTemplate
-from schema.template.prompt_template import StringPromptTemplate
-from memory.openai_chat.window_qdrant_memory import WindowQdrantMemory
+from wela_agents.agents.meta import Meta
+from wela_agents.models.openai_chat import OpenAIChat
+from wela_agents.callback.event import ToolEvent
+from wela_agents.callback.callback import ToolCallback
+from wela_agents.toolkit.quit import Quit
+from wela_agents.toolkit.toolkit import Toolkit
+from wela_agents.toolkit.weather import Weather
+from wela_agents.toolkit.definition import Definition
+from wela_agents.toolkit.duckduckgo import DuckDuckGo
+from wela_agents.toolkit.web_browser import WebBrowser
+from wela_agents.retriever.qdrant_retriever import QdrantRetriever
+from wela_agents.schema.template.openai_chat import encode_image
+from wela_agents.schema.template.openai_chat import encode_clipboard_image
+from wela_agents.schema.template.openai_chat import ContentTemplate
+from wela_agents.schema.template.openai_chat import TextContentTemplate
+from wela_agents.schema.template.openai_chat import UserMessageTemplate
+from wela_agents.schema.template.openai_chat import ImageContentTemplate
+from wela_agents.schema.template.prompt_template import StringPromptTemplate
+from wela_agents.memory.openai_chat.window_qdrant_memory import WindowQdrantMemory
 
 need_continue = True
-app = Flask(__name__)
+flask = Flask(__name__)
 output_xml = '''<xml>
     <ToUserName><![CDATA[%s]]></ToUserName>
     <FromUserName><![CDATA[%s]]></FromUserName>
@@ -159,7 +159,7 @@ def build_meta(config: Dict, callback: ToolCallback = None, stream: bool=True, m
 
     return Meta(model=meta_model, prompt=config.get("prompt"), memory=memory, toolkit=toolkit, retriever=retriever, max_tokens=max_tokens)
 
-@app.route("/gh", methods=["GET"])
+@flask.route("/gh", methods=["GET"])
 def gh_verify():
     signature = request.args.get("signature")
     timestamp = request.args.get("timestamp")
@@ -175,7 +175,7 @@ def gh_verify():
     else:
         return "error", 403
 
-@app.route("/gh", methods=["POST"])
+@flask.route("/gh", methods=["POST"])
 def gh_process():
     msg_tree = ElementTree.fromstring(request.data)
     from_user = msg_tree.find("FromUserName").text
@@ -226,7 +226,7 @@ def gh_process():
             time.sleep(5)
             return "success"
 
-@app.route("/msg", methods=["GET"])
+@flask.route("/msg", methods=["GET"])
 def gh_msg():
     nonce = request.args.get("nonce")
     if nonce in cache:
@@ -241,17 +241,17 @@ def gh_msg():
 
 if __name__ == "__main__":
     if "--gui" in sys.argv[1:]:
-        app: QApplication = QApplication(sys.argv)
+        application: QApplication = QApplication(sys.argv)
         widget: WelaWidget = WelaWidget()
         widget.show()
-        app.exec_()
+        application.exec_()
     elif "--wechat" in sys.argv[1:]:
         config = load_config()
         meta = build_meta(config, stream=False, max_tokens=170)
         wechat_token = config.get("wechat_token")
         openids = config.get("openids")
         cache = ExpiringDict(max_len=100, max_age_seconds=360)
-        app.run(host=config.get("host"), port=config.get("port"), debug=False)
+        flask.run(host=config.get("host"), port=config.get("port"), debug=False)
     else:
         config = load_config()
         meta = build_meta(config=config, callback=ToolMessage())

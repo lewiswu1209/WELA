@@ -26,20 +26,20 @@ from PyQt5.QtWidgets import QSystemTrayIcon
 from modelscope.pipelines import Pipeline
 
 from gui.alarm import Alarm
-from agents.meta import Meta
 from gui.chat_box import ChatBox
 from gui.whiteboard import Whiteboard
 from gui.initializer import Initializer
 from gui.conversation_thread import ConversationThread
 from gui.speech_recognition_thread import SpeechRecognitionThread
-from schema.template.openai_chat import encode_image
-from schema.template.openai_chat import encode_clipboard_image
-from schema.template.openai_chat import ContentTemplate
-from schema.template.openai_chat import UserMessageTemplate
-from schema.template.openai_chat import TextContentTemplate
-from schema.template.openai_chat import ImageContentTemplate
-from schema.template.openai_chat import SystemMessageTemplate
-from schema.template.prompt_template import StringPromptTemplate
+from wela_agents.agents.meta import Meta
+from wela_agents.schema.template.openai_chat import encode_image
+from wela_agents.schema.template.openai_chat import encode_clipboard_image
+from wela_agents.schema.template.openai_chat import ContentTemplate
+from wela_agents.schema.template.openai_chat import UserMessageTemplate
+from wela_agents.schema.template.openai_chat import TextContentTemplate
+from wela_agents.schema.template.openai_chat import ImageContentTemplate
+from wela_agents.schema.template.openai_chat import SystemMessageTemplate
+from wela_agents.schema.template.prompt_template import StringPromptTemplate
 
 class WelaWidget(QWidget):
 

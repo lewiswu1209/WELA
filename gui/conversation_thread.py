@@ -6,10 +6,10 @@ from PyQt5.QtCore import QObject
 from PyQt5.QtCore import QThread
 from PyQt5.QtCore import pyqtSignal
 
-from agents.meta import Meta
-from callback.event import ToolEvent
-from callback.callback import ToolCallback
-from schema.prompt.openai_chat import Message
+from wela_agents.agents.meta import Meta
+from wela_agents.callback.event import ToolEvent
+from wela_agents.callback.callback import ToolCallback
+from wela_agents.schema.prompt.openai_chat import Message
 
 class ConversationThread(QThread, ToolCallback):
 

@@ -9,21 +9,21 @@ from PyQt5.QtCore import pyqtSignal
 from modelscope.pipelines import pipeline
 from modelscope.pipelines import Pipeline
 from modelscope.utils.constant import Tasks
+from qdrant_client import QdrantClient
 from qdrant_client.http.exceptions import UnexpectedResponse
 
-from agents.meta import Meta
-from qdrant_client import QdrantClient
 from gui.whiteboard import Whiteboard
-from models.openai_chat import OpenAIChat
-from toolkit.quit import Quit
-from toolkit.toolkit import Toolkit
-from toolkit.weather import Weather
-from toolkit.definition import Definition
-from toolkit.duckduckgo import DuckDuckGo
-from toolkit.web_browser import WebBrowser
-from toolkit.alarm_clock import AlarmClock
-from retriever.qdrant_retriever import QdrantRetriever
-from memory.openai_chat.window_qdrant_memory import WindowQdrantMemory
+from wela_agents.agents.meta import Meta
+from wela_agents.models.openai_chat import OpenAIChat
+from wela_agents.toolkit.quit import Quit
+from wela_agents.toolkit.toolkit import Toolkit
+from wela_agents.toolkit.weather import Weather
+from wela_agents.toolkit.definition import Definition
+from wela_agents.toolkit.duckduckgo import DuckDuckGo
+from wela_agents.toolkit.web_browser import WebBrowser
+from wela_agents.toolkit.alarm_clock import AlarmClock
+from wela_agents.retriever.qdrant_retriever import QdrantRetriever
+from wela_agents.memory.openai_chat.window_qdrant_memory import WindowQdrantMemory
 
 class InitializerSignal(QObject):
     meta_created = pyqtSignal(Meta)
