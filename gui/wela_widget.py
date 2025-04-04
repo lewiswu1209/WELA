@@ -21,7 +21,6 @@ from PyQt5.QtWidgets import QAction
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtWidgets import QVBoxLayout
 from PyQt5.QtWidgets import QApplication
-from PyQt5.QtWidgets import QInputDialog
 from PyQt5.QtWidgets import QSystemTrayIcon
 from modelscope.pipelines import Pipeline
 
@@ -29,6 +28,7 @@ from gui.alarm import Alarm
 from gui.chat_box import ChatBox
 from gui.whiteboard import Whiteboard
 from gui.initializer import Initializer
+from gui.input_dialog import InputDialog
 from gui.conversation_thread import ConversationThread
 from gui.speech_recognition_thread import SpeechRecognitionThread
 from wela_agents.agents.meta import Meta
@@ -153,7 +153,7 @@ class WelaWidget(QWidget):
 
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
         if self.__is_initialize_completed and event.button() == Qt.LeftButton:
-            text, ok = QInputDialog.getText(self, "输入框", "请输入一些文本:")
+            text, ok = InputDialog(self).getText()
             if ok:
                 self.__start_conversation(text)
         event.accept()

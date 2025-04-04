@@ -244,7 +244,7 @@ if __name__ == "__main__":
         application: QApplication = QApplication(sys.argv)
         widget: WelaWidget = WelaWidget()
         widget.show()
-        application.exec_()
+        sys.exit(application.exec_())
     elif "--wechat" in sys.argv[1:]:
         config = load_config()
         meta = build_meta(config, stream=False, max_tokens=170)
