@@ -5,6 +5,9 @@ pyyaml
 pyaudio
 keyboard
 markdown
+html2text
+playwright
 torchaudio
 wela_agents
 expiringdict
+readability-lxml

@@ -12,16 +12,16 @@ from modelscope.utils.constant import Tasks
 from qdrant_client import QdrantClient
 from qdrant_client.http.exceptions import UnexpectedResponse
 
+from toolkit.quit import Quit
+from toolkit.weather import Weather
+from toolkit.definition import Definition
+from toolkit.duckduckgo import DuckDuckGo
+from toolkit.web_browser import WebBrowser
+from toolkit.alarm_clock import AlarmClock
 from gui.whiteboard import Whiteboard
 from wela_agents.agents.meta import Meta
 from wela_agents.models.openai_chat import OpenAIChat
-from wela_agents.toolkit.quit import Quit
 from wela_agents.toolkit.toolkit import Toolkit
-from wela_agents.toolkit.weather import Weather
-from wela_agents.toolkit.definition import Definition
-from wela_agents.toolkit.duckduckgo import DuckDuckGo
-from wela_agents.toolkit.web_browser import WebBrowser
-from wela_agents.toolkit.alarm_clock import AlarmClock
 from wela_agents.retriever.qdrant_retriever import QdrantRetriever
 from wela_agents.memory.openai_chat.window_qdrant_memory import WindowQdrantMemory
 
@@ -106,15 +106,15 @@ class Initializer(QObject):
             retriever = None
 
         self.signal.conversation_changed.emit("加载工具箱")
-        if config.get("proxy", None):
+        proxy = config.get("proxy", None)
+        if proxy:
             proxies = {
-                "http": config.get("proxy"),
-                "https": config.get("proxy")
+                "http": proxy,
+                "https": proxy
             }
         else:
             proxies = None
-        tool_model = OpenAIChat(model_name=config.get("openai").get("model_name"), stream=False, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
-        toolkit = Toolkit([AlarmClock(), Quit(), Weather(), Definition(proxies), DuckDuckGo(proxies), WebBrowser(tool_model, proxies)], None)
+        toolkit = Toolkit([AlarmClock(), Quit(), Weather(), Definition(proxies), DuckDuckGo(proxies), WebBrowser(headless=False, proxy=proxy)], None)
         self.signal.conversation_changed.emit("加载人物性格")
         meta_model = OpenAIChat(model_name=config.get("openai").get("model_name"),stream=True, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
         meta = Meta(model=meta_model, prompt=config.get("prompt"),memory=memory, toolkit=toolkit, retriever=retriever)

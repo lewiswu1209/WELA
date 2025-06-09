@@ -4,7 +4,6 @@ import sys
 import time
 import yaml
 import hashlib
-import markdown
 
 from flask import Flask
 from flask import request
@@ -20,17 +19,17 @@ from qdrant_client import QdrantClient
 from qdrant_client.http.exceptions import UnexpectedResponse
 from PyQt5.QtWidgets import QApplication
 
+from toolkit.quit import Quit
+from toolkit.weather import Weather
+from toolkit.definition import Definition
+from toolkit.duckduckgo import DuckDuckGo
+from toolkit.web_browser import WebBrowser
 from gui.wela_widget import WelaWidget
 from wela_agents.agents.meta import Meta
 from wela_agents.models.openai_chat import OpenAIChat
+from wela_agents.toolkit.toolkit import Toolkit
 from wela_agents.callback.event import ToolEvent
 from wela_agents.callback.callback import ToolCallback
-from wela_agents.toolkit.quit import Quit
-from wela_agents.toolkit.toolkit import Toolkit
-from wela_agents.toolkit.weather import Weather
-from wela_agents.toolkit.definition import Definition
-from wela_agents.toolkit.duckduckgo import DuckDuckGo
-from wela_agents.toolkit.web_browser import WebBrowser
 from wela_agents.retriever.qdrant_retriever import QdrantRetriever
 from wela_agents.schema.template.openai_chat import encode_image
 from wela_agents.schema.template.openai_chat import encode_clipboard_image
@@ -94,10 +93,11 @@ def parse_user_input() -> Tuple[str, str, str]:
         return None, None, user_input
 
 def build_meta(config: Dict, callback: ToolCallback = None, stream: bool=True, max_tokens: Optional[int] = NOT_GIVEN) -> Meta:
-    if config.get("proxy", None):
+    proxy = config.get("proxy", None)
+    if proxy:
         proxies = {
-            "http": config.get("proxy"),
-            "https": config.get("proxy")
+            "http": proxy,
+            "https": proxy
         }
     else:
         proxies = None
@@ -154,8 +154,7 @@ def build_meta(config: Dict, callback: ToolCallback = None, stream: bool=True, m
         retriever = None
 
     meta_model = OpenAIChat(model_name=config.get("openai").get("model_name"), stream=stream, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
-    tool_model = OpenAIChat(model_name=config.get("openai").get("model_name"), stream=False, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
-    toolkit = Toolkit([Quit(), Weather(), Definition(proxies), DuckDuckGo(proxies), WebBrowser(tool_model, proxies)], callback)
+    toolkit = Toolkit([Quit(), Weather(), Definition(proxies), DuckDuckGo(proxies), WebBrowser(headless=False, proxy=proxy)], callback)
 
     return Meta(model=meta_model, prompt=config.get("prompt"), memory=memory, toolkit=toolkit, retriever=retriever, max_tokens=max_tokens)
 
@@ -225,19 +224,6 @@ def gh_process():
             cache[nonce] = meta_response["content"]
             time.sleep(5)
             return "success"
-
-@flask.route("/msg", methods=["GET"])
-def gh_msg():
-    nonce = request.args.get("nonce")
-    if nonce in cache:
-        if cache[nonce] != "":
-            html = markdown.markdown(cache[nonce])
-            gh_response = make_response(html)
-        else:
-            gh_response = make_response("对方还在输入……")
-    else:
-        gh_response = make_response("参数无效")
-    return gh_response
 
 if __name__ == "__main__":
     if "--gui" in sys.argv[1:]:
