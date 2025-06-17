@@ -1,6 +1,7 @@
 
 from typing import Any
 from typing import Dict
+from typing import Callable
 from duckduckgo_search import DDGS
 
 from wela_agents.toolkit.toolkit import Tool
@@ -19,7 +20,7 @@ class DuckDuckGo(Tool):
         )
         self.__proxies = proxies
 
-    def _invoke(self, **kwargs: Any) -> str:
+    def _invoke(self, callback: Callable = None, **kwargs: Any) -> str:
         keywords = kwargs["keywords"]
         result = f"Here are the search results for '{keywords}':\n\n"
         proxy = self.__proxies["http"] if self.__proxies else None

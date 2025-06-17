@@ -2,6 +2,7 @@
 import json
 
 from typing import Any
+from typing import Callable
 from curl_cffi import requests
 
 from wela_agents.toolkit.toolkit import Tool
@@ -25,7 +26,7 @@ class Weather(Tool):
             }
         )
 
-    def _invoke(self, **kwargs: Any) -> str:
+    def _invoke(self, callback: Callable = None, **kwargs: Any) -> str:
         city = kwargs["city"]
         url: str = f"https://wttr.in/{city}?format=j1"
         try:

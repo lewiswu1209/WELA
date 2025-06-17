@@ -1,6 +1,7 @@
 
 from typing import Any
 from typing import Dict
+from typing import Callable
 from itertools import islice
 from duckduckgo_search import DDGS
 
@@ -19,7 +20,7 @@ class Definition(Tool):
         )
         self.__proxies = proxies
 
-    def _invoke(self, **kwargs: Any) -> str:
+    def _invoke(self, callback: Callable = None, **kwargs: Any) -> str:
         given_noun = kwargs["given_noun"]
         proxy = self.__proxies["http"] if self.__proxies else None
         try:

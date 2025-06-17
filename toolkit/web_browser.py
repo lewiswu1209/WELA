@@ -2,6 +2,7 @@
 import html2text
 
 from typing import Any
+from typing import Callable
 from readability import Document
 from playwright.sync_api import sync_playwright
 
@@ -70,7 +71,7 @@ class WebBrowser(Tool):
         markdown_content = self.__convert_to_markdown(main_content)
         return markdown_content
 
-    def _invoke(self, **kwargs: Any) -> str:
+    def _invoke(self, callback: Callable = None, **kwargs: Any) -> str:
         try:
             url: str = kwargs["url"]
             return self.__visit(url)

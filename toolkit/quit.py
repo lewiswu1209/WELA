@@ -1,5 +1,6 @@
 
 from typing import Any
+from typing import Callable
 
 from wela_agents.toolkit.toolkit import Tool
 
@@ -15,7 +16,7 @@ class Quit(Tool):
             }
         )
 
-    def _invoke(self, **kwargs: Any) -> str:
+    def _invoke(self, callback: Callable = None, **kwargs: Any) -> str:
         goodbye_words = kwargs["goodbye_words"]
         return f"You need repeat '{goodbye_words}'"
 
