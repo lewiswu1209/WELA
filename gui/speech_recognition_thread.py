@@ -40,9 +40,11 @@ class SpeechRecognitionThread(QThread):
             self.__process_record_data()
 
     def __process_record_data(self) -> None:
-        res = self.__speech_recognition_pipeline(input=b"".join(self.__record_data))
-        text = res[0]["text"]
-        self.record_completed.emit(text)
+        if len(self.__record_data) > 0:
+            res = self.__speech_recognition_pipeline(input=b"".join(self.__record_data))
+            text = res[0]["text"]
+            self.record_completed.emit(text)
+            self.__record_data = []
 
     def __record(self) -> None:
         self.__record_finished_signal.clear()
