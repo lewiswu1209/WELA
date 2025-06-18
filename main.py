@@ -5,6 +5,9 @@ import time
 import yaml
 import hashlib
 
+# This is useless, just to load funasr.AutoModel in the first place, because loading it after PyQt5.QtWidgets.QApplication will cause an exception, and I don't know why
+import gui.speech_recognition_thread
+
 from flask import Flask
 from flask import request
 from flask import make_response

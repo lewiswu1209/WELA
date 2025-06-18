@@ -4,6 +4,7 @@ import sys
 import time
 import random
 
+from funasr import AutoModel
 from datetime import datetime
 from functools import partial
 from PyQt5.QtGui import QIcon
@@ -25,7 +26,6 @@ from PyQt5.QtWidgets import QWidget
 from PyQt5.QtWidgets import QVBoxLayout
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtWidgets import QSystemTrayIcon
-from modelscope.pipelines import Pipeline
 
 from gui.alarm import Alarm
 from gui.chat_box import ChatBox
@@ -255,8 +255,8 @@ class WelaWidget(QWidget):
         self.__conversation_thread.conversation_finished.connect(self.__on_chat_finished)
         self.__conversation_thread.set_alarm_clock.connect(self.__schedule)
 
-    def __on_speech_recognition_created(self, speech_recognition_pipeline: Pipeline) -> None:
-        self.__speech_recognition_thread = SpeechRecognitionThread(speech_recognition_pipeline = speech_recognition_pipeline)
+    def __on_speech_recognition_created(self, model: AutoModel) -> None:
+        self.__speech_recognition_thread = SpeechRecognitionThread(model = model)
         self.__speech_recognition_thread.record_completed.connect(self.__start_conversation)
 
     def __on_whiteboard_created(self, whiteboard: Whiteboard) -> None:

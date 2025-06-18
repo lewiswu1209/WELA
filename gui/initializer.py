@@ -3,12 +3,10 @@ import os
 import sys
 import yaml
 
+from funasr import AutoModel
 from PyQt5.QtCore import QObject
 from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtCore import pyqtSignal
-from modelscope.pipelines import pipeline
-from modelscope.pipelines import Pipeline
-from modelscope.utils.constant import Tasks
 from qdrant_client import QdrantClient
 from qdrant_client.http.exceptions import UnexpectedResponse
 
@@ -19,6 +17,7 @@ from toolkit.duckduckgo import DuckDuckGo
 from toolkit.web_browser import WebBrowser
 from toolkit.alarm_clock import AlarmClock
 from gui.whiteboard import Whiteboard
+from gui.speech_recognition_thread import model
 from wela_agents.agents.meta import Meta
 from wela_agents.models.openai_chat import OpenAIChat
 from wela_agents.toolkit.toolkit import Toolkit
@@ -27,7 +26,7 @@ from wela_agents.memory.openai_chat.window_qdrant_memory import WindowQdrantMemo
 
 class InitializerSignal(QObject):
     meta_created = pyqtSignal(Meta)
-    speech_recognition_created = pyqtSignal(Pipeline)
+    speech_recognition_created = pyqtSignal(AutoModel)
     whiteboard_created = pyqtSignal(Whiteboard)
     conversation_started = pyqtSignal()
     conversation_changed = pyqtSignal(str)
@@ -120,16 +119,7 @@ class Initializer(QObject):
         meta = Meta(model=meta_model, prompt=config.get("prompt"),memory=memory, toolkit=toolkit, retriever=retriever)
         self.signal.meta_created.emit(meta)
         self.signal.conversation_changed.emit("加载语音识别")
-        try:
-            speech_recognition_pipeline = pipeline(
-                task=Tasks.auto_speech_recognition,
-                model='iic/speech_paraformer_asr_nat-zh-cn-16k-common-vocab8358-tensorflow1',
-                vad_model='iic/speech_fsmn_vad_zh-cn-16k-common-pytorch',
-                punc_model='iic/punc_ct-transformer_zh-cn-common-vocab272727-pytorch'
-            )
-            self.signal.speech_recognition_created.emit(speech_recognition_pipeline)
-        except Exception as _:
-            self.signal.conversation_changed.emit("语音识别加载失败，语音识别将无法使用")
+        self.signal.speech_recognition_created.emit(model)
         self.signal.conversation_changed.emit("加载白板")
         self.signal.whiteboard_created.emit(Whiteboard())
         self.signal.conversation_changed.emit("加载通知图标")
