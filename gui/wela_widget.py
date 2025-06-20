@@ -53,6 +53,7 @@ class WelaWidget(QWidget):
         self.__is_mouse_dragging = False
         self.__is_initialize_completed = False
         self.__speech_recognition_thread = None
+        self.__emotion_timer = 0
 
         self.setLayout(QVBoxLayout(self))
         self.setAutoFillBackground(False)
@@ -89,6 +90,8 @@ class WelaWidget(QWidget):
         self.__initialize_thread.start()
 
     def __change_status(self, status = "normal") -> None:
+        if status not in ["normal", "working", "sleeping", "anger", "disgust", "fear", "happiness", "sadness", "surprise"]:
+            status = "normal"
         folder_path = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), f"res/{status}")
         files = os.listdir(folder_path)
         file = os.path.join(folder_path, random.choice(files))
@@ -215,6 +218,26 @@ class WelaWidget(QWidget):
         self.__chat_box.set_border_color("LightSalmon")
 
     def __on_chat_updated(self, text: str) -> None:
+        emotion_map = {
+            '✿': 'happiness',
+            '⍣': 'sadness',
+            'ꙮ': 'anger',
+            '⸎': 'fear',
+            '꠸': 'disgust',
+            '۞': 'surprise',
+            '꙾': 'sleeping'
+        }
+        if text:
+            first_char = text[0]
+            if 0 <= datetime.now().hour <= 5:
+                default_status="sleeping"
+            else:
+                default_status="normal"
+            emotion = default_status
+            if first_char in emotion_map:
+                emotion = emotion_map.get(first_char, default_status)
+                text = text[1:].lstrip()
+            self.__change_status(status=emotion)
         self.__chat_box.set_contents(text)
         self.__chat_box.show()
         desktop_center = QApplication.desktop().availableGeometry().center()
@@ -232,6 +255,7 @@ class WelaWidget(QWidget):
     def __on_chat_finished(self) -> None:
         self.__chat_box.set_border_color("LightSkyBlue")
         self.__is_chatting = False
+        self.__emotion_timer = 9
         self.__chat_box.start_hide_timer(9000)
 
     def __on_alarm(self, timestamp, reason) -> None:
@@ -264,10 +288,14 @@ class WelaWidget(QWidget):
 
     def __on_refresh(self) -> None:
         if not self.__is_chatting:
-            if 0 <= datetime.now().hour <= 5:
-                self.__change_status(status="sleeping")
+            if self.__emotion_timer > 0:
+                self.__emotion_timer = self.__emotion_timer - 1
             else:
-                self.__change_status(status="normal")
+                if 0 <= datetime.now().hour <= 5:
+                    status="sleeping"
+                else:
+                    status="normal"
+                self.__change_status(status=status)
 
     def __on_initialize_completed(self) -> None:
         exit_action = QAction("退出", self)
