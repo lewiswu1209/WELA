@@ -15,6 +15,7 @@ from PyQt5.QtGui import QMouseEvent
 from PyQt5.QtGui import QDragEnterEvent
 from PyQt5.QtCore import Qt
 from PyQt5.QtCore import QSize
+from PyQt5.QtCore import QTimer
 from PyQt5.QtCore import QPoint
 from PyQt5.QtCore import QLocale
 from PyQt5.QtCore import QThread
@@ -49,11 +50,12 @@ class WelaWidget(QWidget):
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
-        self.__is_chatting = False
         self.__is_mouse_dragging = False
         self.__is_initialize_completed = False
         self.__speech_recognition_thread = None
-        self.__emotion_timer = 0
+        self.__status = "working"
+        self.__old_status = ""
+        self.__timer = QTimer()
 
         self.setLayout(QVBoxLayout(self))
         self.setAutoFillBackground(False)
@@ -61,8 +63,9 @@ class WelaWidget(QWidget):
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
 
         self.__label: QLabel = None
+        self.__movie: QMovie = None
 
-        self.__change_status(status="working")
+        self.__change_status(status=self.__status)
 
         self.__chat_box = ChatBox()
 
@@ -98,16 +101,22 @@ class WelaWidget(QWidget):
         pixmap = QPixmap(file)
         width = 200
         height = int(width * pixmap.height() / pixmap.width())
-        movie = QMovie(file)
-        movie.setScaledSize(QSize(width, height))
-        movie.start()
+        self.__movie = QMovie(file)
+        self.__movie.setScaledSize(QSize(width, height))
+        self.__movie.frameChanged.connect(self.__check_last_frame)
+        self.__movie.start()
 
         if self.__label:
             self.layout().removeWidget(self.__label)
         self.__label: QLabel = QLabel(self)
-        self.__label.setMovie(movie)
+        self.__label.setMovie(self.__movie)
         self.layout().addWidget(self.__label)
         self.resize(self.__label.size())
+
+    def __check_last_frame(self, frame_number):
+        if self.__movie.frameCount() > 0 and frame_number == self.__movie.frameCount() - 1:
+            self.__movie.stop()
+            self.__movie.frameChanged.disconnect(self.__check_last_frame)
 
     def __start_conversation(self, text: str) -> None:
         content_list = [ImageContentTemplate(image_url=encoded_image) for encoded_image in self.__whiteboard]
@@ -212,8 +221,7 @@ class WelaWidget(QWidget):
 
     def __on_chat_started(self) -> None:
         self.__chat_box.reset()
-        self.__is_chatting = True
-        self.__change_status(status="working")
+        self.__status = "working"
         self.__on_chat_updated("对方正在输入……")
         self.__chat_box.set_border_color("LightSalmon")
 
@@ -237,7 +245,7 @@ class WelaWidget(QWidget):
             if first_char in emotion_map:
                 emotion = emotion_map.get(first_char, default_status)
                 text = text[1:].lstrip()
-            self.__change_status(status=emotion)
+            self.__status = emotion
         self.__chat_box.set_contents(text)
         self.__chat_box.show()
         desktop_center = QApplication.desktop().availableGeometry().center()
@@ -254,9 +262,9 @@ class WelaWidget(QWidget):
 
     def __on_chat_finished(self) -> None:
         self.__chat_box.set_border_color("LightSkyBlue")
-        self.__is_chatting = False
-        self.__emotion_timer = 9
         self.__chat_box.start_hide_timer(9000)
+        self.__timer.stop()
+        self.__timer.singleShot(10000, self.__on_status_timeout)
 
     def __on_alarm(self, timestamp, reason) -> None:
         date_time = time.strftime("%Y-%m-%d %H:%M", time.gmtime(timestamp))
@@ -287,15 +295,10 @@ class WelaWidget(QWidget):
         self.__whiteboard = whiteboard
 
     def __on_refresh(self) -> None:
-        if not self.__is_chatting:
-            if self.__emotion_timer > 0:
-                self.__emotion_timer = self.__emotion_timer - 1
-            else:
-                if 0 <= datetime.now().hour <= 5:
-                    status="sleeping"
-                else:
-                    status="normal"
-                self.__change_status(status=status)
+        if self.__movie.state() == QMovie.MovieState.NotRunning:
+            if self.__old_status != self.__status or random.random() < 0.1:
+                self.__old_status = self.__status
+                self.__change_status(status=self.__status)
 
     def __on_initialize_completed(self) -> None:
         exit_action = QAction("退出", self)
@@ -328,6 +331,12 @@ class WelaWidget(QWidget):
         self.__alarm.refresh.connect(self.__on_refresh)
         self.__alarm.load()
         self.__alarm.start(1000)
+
+    def __on_status_timeout(self) -> None:
+        if 0 <= datetime.now().hour <= 5:
+            self.__status="sleeping"
+        else:
+            self.__status="normal"
 
 __all__ = [
     "WelaWidget"

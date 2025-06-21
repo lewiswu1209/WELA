@@ -58,14 +58,16 @@ class ToolMessage(ToolCallback):
         if event.tool_name == "quit":
             pass
         else:
-            print("准备使用工具:{}\n参数:\n{}".format(event.tool_name, event.arguments))
+            if "--debug" in sys.argv[1:]:
+                print("准备使用工具:{}\n参数:\n{}".format(event.tool_name, event.arguments))
 
     def after_tool_call(self, event: ToolEvent) -> None:
         if event.tool_name == "quit":
             global need_continue
             need_continue = False
         else:
-            print("工具'{}'的结果:\n{}".format(event.tool_name, event.result))
+            if "--debug" in sys.argv[1:]:
+                print("工具'{}'的结果:\n{}".format(event.tool_name, event.result))
 
 def load_config(config_file_path: str = "config.yaml") -> Dict[str, Any]:
     config = None
