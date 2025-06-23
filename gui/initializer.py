@@ -15,6 +15,7 @@ from toolkit.weather import Weather
 from toolkit.definition import Definition
 from toolkit.duckduckgo import DuckDuckGo
 from toolkit.web_browser import WebBrowser
+from toolkit.web_browser import WebBrowserScreenshot
 from toolkit.alarm_clock import AlarmClock
 from gui.whiteboard import Whiteboard
 from gui.speech_recognition_thread import model
@@ -113,7 +114,8 @@ class Initializer(QObject):
             }
         else:
             proxies = None
-        toolkit = Toolkit([AlarmClock(), Quit(), Weather(), Definition(proxies), DuckDuckGo(proxies), WebBrowser(headless=False, proxy=proxy)], None)
+        tool_model = OpenAIChat(model_name=config.get("openai").get("model_name"),stream=False, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
+        toolkit = Toolkit([AlarmClock(), Quit(), Weather(), Definition(proxies), DuckDuckGo(proxies), WebBrowser(headless=False, proxy=proxy), WebBrowserScreenshot(model=tool_model, headless=False, proxy=proxy)], None)
         self.signal.conversation_changed.emit("加载人物性格")
         meta_model = OpenAIChat(model_name=config.get("openai").get("model_name"),stream=True, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
         meta = Meta(model=meta_model, prompt=config.get("prompt"),memory=memory, toolkit=toolkit, retriever=retriever)

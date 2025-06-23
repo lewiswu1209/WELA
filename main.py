@@ -27,6 +27,7 @@ from toolkit.weather import Weather
 from toolkit.definition import Definition
 from toolkit.duckduckgo import DuckDuckGo
 from toolkit.web_browser import WebBrowser
+from toolkit.web_browser import WebBrowserScreenshot
 from gui.wela_widget import WelaWidget
 from wela_agents.agents.meta import Meta
 from wela_agents.models.openai_chat import OpenAIChat
@@ -157,9 +158,9 @@ def build_meta(config: Dict, callback: ToolCallback = None, stream: bool=True, m
             retriever = None
     else:
         retriever = None
-
+    tool_model = OpenAIChat(model_name=config.get("openai").get("model_name"),stream=False, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
     meta_model = OpenAIChat(model_name=config.get("openai").get("model_name"), stream=stream, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
-    toolkit = Toolkit([Quit(), Weather(), Definition(proxies), DuckDuckGo(proxies), WebBrowser(headless=False, proxy=proxy)], callback)
+    toolkit = Toolkit([Quit(), Weather(), Definition(proxies), DuckDuckGo(proxies), WebBrowser(headless=False, proxy=proxy), WebBrowserScreenshot(model=tool_model, headless=False, proxy=proxy)], callback)
 
     return Meta(model=meta_model, prompt=config.get("prompt"), memory=memory, toolkit=toolkit, retriever=retriever, max_tokens=max_tokens)
 
