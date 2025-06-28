@@ -147,7 +147,8 @@ class WelaWidget(QWidget):
             text = f'''Translate the following text to {language}:
 ```
 {text}
-```'''
+```
+Response directly with the translated text, do not add any other content.'''
             self.__start_conversation(text)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
