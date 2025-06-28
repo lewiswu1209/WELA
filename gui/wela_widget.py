@@ -317,7 +317,8 @@ class WelaWidget(QWidget):
         self.__context_menu.addAction(exit_action)
 
         tray_icon = QSystemTrayIcon(self)
-        tray_icon.setIcon(QIcon(os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), "res/icon.png")))
+        tray_icon.setIcon(QIcon(os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), "res/icon.ico")))
+        tray_icon.setToolTip("Wela")
         tray_icon.setContextMenu(self.__context_menu)
         tray_icon.show()
 
