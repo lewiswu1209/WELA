@@ -13,10 +13,9 @@ from qdrant_client.http.exceptions import UnexpectedResponse
 
 from toolkit.quit import Quit
 from toolkit.weather import Weather
-from toolkit.definition import Definition
-from toolkit.duckduckgo import DuckDuckGo
 from toolkit.web_browser import WebBrowser
 from toolkit.web_browser import WebBrowserScreenshot
+from toolkit.google_search import GoogleSearch
 from wela_agents.agents.meta import Meta
 from wela_agents.models.openai_chat import OpenAIChat
 from wela_agents.toolkit.toolkit import Toolkit
@@ -140,7 +139,7 @@ def build_meta(config: Dict, callback: ToolCallback = None, stream: bool=True, m
         retriever = None
     tool_model = OpenAIChat(model_name=config.get("openai").get("model_name"),stream=False, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
     meta_model = OpenAIChat(model_name=config.get("openai").get("model_name"), stream=stream, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
-    toolkit = Toolkit([Quit(), Weather(), Definition(proxies), DuckDuckGo(proxies), WebBrowser(headless=False, proxy=proxy), WebBrowserScreenshot(model=tool_model, headless=False, proxy=proxy)], callback)
+    toolkit = Toolkit([Quit(), Weather(), GoogleSearch(config.get("google_custom_search").get("api_key"), config.get("google_custom_search").get("search_engine_id"), proxies), WebBrowser(headless=False, proxy=proxy), WebBrowserScreenshot(model=tool_model, headless=False, proxy=proxy)], callback)
 
     return Meta(model=meta_model, prompt=config.get("prompt"), memory=memory, toolkit=toolkit, retriever=retriever, max_tokens=max_tokens)
 
