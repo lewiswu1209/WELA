@@ -77,6 +77,7 @@ class ChatBox(QWidget):
         self.setFixedWidth(int(fixed_width) + self.layout().spacing() * 4)
 
     def set_contents(self, text: str) -> None:
+        text = text.replace("<think>", "<span style='color: #FF4500;'>").replace("</think>", "</span>")
         html = markdown.markdown(text)
         self.__text_edit.setHtml(html)
 

@@ -1,4 +1,5 @@
 
+import re
 import os
 import sys
 import time
@@ -227,6 +228,9 @@ Response directly with the translated text, do not add any other content.'''
         self.__chat_box.set_border_color("LightSalmon")
 
     def __on_chat_updated(self, text: str) -> None:
+        match = re.search(r'(?:<think>)?.*?</think>(.*)', text, re.DOTALL)
+        if match:
+            text = match.group(1).strip()
         emotion_map = {
             '✿': 'happiness',
             '⍣': 'sadness',
