@@ -5,10 +5,61 @@ import yaml
 
 from typing import Any
 from typing import Dict
+from typing import List
 from qdrant_client import QdrantClient
 
 from wela_agents.schema.document.document import Document
 from wela_agents.retriever.qdrant_retriever import QdrantRetriever
+
+def split_text_by_paragraphs(text: str, max_chars: int) -> List[str]:
+    paragraphs = []
+    current_para = []
+
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+
+        current_para.append(line)
+
+        if line.strip().endswith(('。', '!', '?', '.', '！', '？')) or len(line) > 50:
+            if current_para:
+                paragraphs.append('\n'.join(current_para))
+                current_para = []
+
+    if current_para:
+        paragraphs.append('\n'.join(current_para))
+
+    if not paragraphs:
+        paragraphs = [line for line in text.splitlines() if line.strip()]
+
+    result = []
+    current_group = []
+    current_count = 0
+
+    for para in paragraphs:
+        para_length = len(para)
+
+        if para_length > max_chars:
+            if current_group:
+                result.append('\n'.join(current_group))
+                current_group = []
+                current_count = 0
+            result.append(para)
+            continue
+
+        if current_count + para_length <= max_chars:
+            current_group.append(para)
+            current_count += para_length
+        else:
+            if current_group:
+                result.append('\n'.join(current_group))
+            current_group = [para]
+            current_count = para_length
+
+    if current_group:
+        result.append('\n'.join(current_group))
+
+    return result
 
 def load_files_from_directory(directory_path):
     docs = []
@@ -18,11 +69,14 @@ def load_files_from_directory(directory_path):
             try:
                 with open(file_path, 'r', encoding='utf-8') as file:
                     content = file.read()
-                    doc = Document(
-                        page_content=content,
-                        metadata={"filename": filename}
-                    )
-                    docs.append(doc)
+                    results = split_text_by_paragraphs(content, 2000)
+                    docs = [Document(
+                        page_content=result,
+                        metadata={
+                            "filename": filename
+                        }
+                    ) for result in results]
+                    docs.extend(docs)
             except Exception as e:
                 print(f"Error reading file {filename}: {e}")
     return docs
