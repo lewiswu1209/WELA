@@ -77,7 +77,7 @@ def parse_user_input() -> Tuple[str, str, str]:
     else:
         return None, None, user_input
 
-def build_meta(config: Dict, callback: ToolCallback = None, stream: bool=True, max_tokens: Optional[int] = NOT_GIVEN) -> Meta:
+def build_meta(config: Dict, callback: ToolCallback = None, stream: bool=True, max_completion_tokens: Optional[int] = NOT_GIVEN) -> Meta:
     proxy = config.get("proxy", None)
     if proxy:
         proxies = {
@@ -141,7 +141,16 @@ def build_meta(config: Dict, callback: ToolCallback = None, stream: bool=True, m
     meta_model = OpenAIChat(model_name=config.get("openai").get("model_name"), stream=stream, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
     toolkit = Toolkit([Quit(), Weather(), GoogleSearch(config.get("google_custom_search").get("api_key"), config.get("google_custom_search").get("search_engine_id"), proxies), WebBrowser(headless=False, proxy=proxy), WebBrowserScreenshot(model=tool_model, headless=False, proxy=proxy)], callback)
 
-    return Meta(model=meta_model, prompt=config.get("prompt"), memory=memory, toolkit=toolkit, retriever=retriever, max_tokens=max_tokens)
+    return Meta(
+        model=meta_model,
+        prompt=config.get("prompt"),
+        max_completion_tokens=max_completion_tokens,
+        reasoning_effort=config.get("openai").get("reasoning_effort"),
+        verbosity=config.get("openai").get("verbosity"),
+        memory=memory,
+        toolkit=toolkit,
+        retriever=retriever
+    )
 
 if __name__ == "__main__":
     config = load_config()

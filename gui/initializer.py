@@ -117,7 +117,15 @@ class Initializer(QObject):
         toolkit = Toolkit([AlarmClock(), Quit(), Weather(), GoogleSearch(config.get("google_custom_search").get("api_key"), config.get("google_custom_search").get("search_engine_id"), proxies), WebBrowser(headless=False, proxy=proxy), WebBrowserScreenshot(model=tool_model, headless=False, proxy=proxy)], None)
         self.signal.conversation_changed.emit("加载人物性格")
         meta_model = OpenAIChat(model_name=config.get("openai").get("model_name"),stream=True, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
-        meta = Meta(model=meta_model, prompt=config.get("prompt"),memory=memory, toolkit=toolkit, retriever=retriever)
+        meta = Meta(
+            model=meta_model,
+            prompt=config.get("prompt"),
+            reasoning_effort=config.get("openai").get("reasoning_effort"),
+            verbosity=config.get("openai").get("verbosity"),
+            memory=memory,
+            toolkit=toolkit,
+            retriever=retriever
+        )
         self.signal.meta_created.emit(meta)
         self.signal.conversation_changed.emit("加载语音识别")
         self.signal.speech_recognition_created.emit(model)
