@@ -42,6 +42,9 @@ class ChatBox(QWidget):
     def start_hide_timer(self, msec: int) -> None:
         self.__hide_timer.singleShot(msec, self.__on_hide_timer)
 
+    def stop_hide_timer(self) -> None:
+        self.__hide_timer.stop()
+
     def __on_hide_timer(self) -> None:
         self.hide()
 
@@ -80,6 +83,9 @@ class ChatBox(QWidget):
         text = text.replace("<think>", "<span style='color: #FF4500;'>").replace("</think>", "</span>")
         html = markdown.markdown(text)
         self.__text_edit.setHtml(html)
+
+        scrollbar = self.__text_edit.verticalScrollBar()
+        scrollbar.setValue(scrollbar.maximum())
 
     def set_border_color(self, color: str) -> None:
         self.__text_edit.setStyleSheet(f"border: 3px solid {color}; border-radius: 5px; background: WhiteSmoke;")
