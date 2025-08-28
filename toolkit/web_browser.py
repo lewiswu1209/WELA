@@ -12,6 +12,7 @@ from playwright.sync_api import sync_playwright
 
 from wela_agents.agents.llm import LLMAgent
 from wela_agents.toolkit.toolkit import Tool
+from wela_agents.toolkit.tool_result import ToolResult
 from wela_agents.models.openai_chat import OpenAIChat
 from wela_agents.schema.template.openai_chat import ChatTemplate
 from wela_agents.schema.template.openai_chat import ContentTemplate
@@ -24,8 +25,8 @@ class WebBrowser(Tool):
 
     def __init__(self, headless=True, proxy: str = None) -> None:
         super().__init__(
-            name="visit_webpage",
-            description="A web browser for visiting a specific URL.",
+            name="get_webpage_content",
+            description="get the main content of a specific URL.",
             required=["url"],
             url={
                 "type": "string",
@@ -86,17 +87,21 @@ class WebBrowser(Tool):
     def _invoke(self, callback: Callable = None, **kwargs: Any) -> str:
         try:
             url: str = kwargs["url"]
-            return self.__visit(url)
+            return ToolResult(
+                result=self.__visit(url)
+            )
 
         except Exception as e:
-            return f"{e}"
+            return ToolResult(
+                result=f"{e}"
+            )
 
 class WebBrowserScreenshot(Tool):
 
     def __init__(self, model: OpenAIChat, headless=True, proxy: str = None) -> None:
         super().__init__(
-            name="screenshot_webpage",
-            description="A web browser for visiting a specific URL. It has a high cost, so it can only be used when the `visit_webpage` tool cannot correctly retrieve the content.",
+            name="get_webpage_content_via_screenshot",
+            description="get the content of a specific URL via screenshot. It has a high cost, so it can only be used when the `get_webpage_content` tool cannot correctly retrieve the content.",
             required=["url"],
             url={
                 "type": "string",
@@ -206,11 +211,14 @@ Remember, your goal is to create a summary that can be easily understood and uti
     def _invoke(self, callback: Callable = None, **kwargs: Any) -> str:
         try:
             url: str = kwargs["url"]
-            return self.__visit(url)
+            return ToolResult(
+                result=self.__visit(url)
+            )
 
         except Exception as e:
-            return f"{e}"
-
+            return ToolResult(
+                result=f"{e}"
+            )
 
 __all__ = [
     "WebBrowser",

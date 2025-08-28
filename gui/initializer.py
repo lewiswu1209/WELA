@@ -12,6 +12,7 @@ from qdrant_client.http.exceptions import UnexpectedResponse
 
 from toolkit.quit import Quit
 from toolkit.weather import Weather
+from toolkit.screen_shot import ScreenShot
 from toolkit.web_browser import WebBrowser
 from toolkit.web_browser import WebBrowserScreenshot
 from toolkit.alarm_clock import AlarmClock
@@ -114,7 +115,7 @@ class Initializer(QObject):
         else:
             proxies = None
         tool_model = OpenAIChat(model_name=config.get("openai").get("model_name"),stream=False, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
-        toolkit = Toolkit([AlarmClock(), Quit(), Weather(), GoogleSearch(config.get("google_custom_search").get("api_key"), config.get("google_custom_search").get("search_engine_id"), proxies), WebBrowser(headless=False, proxy=proxy), WebBrowserScreenshot(model=tool_model, headless=False, proxy=proxy)], None)
+        toolkit = Toolkit([ScreenShot(), AlarmClock(), Quit(), Weather(), GoogleSearch(config.get("google_custom_search").get("api_key"), config.get("google_custom_search").get("search_engine_id"), proxies), WebBrowser(headless=False, proxy=proxy), WebBrowserScreenshot(model=tool_model, headless=False, proxy=proxy)], None)
         self.signal.conversation_changed.emit("加载人物性格")
         meta_model = OpenAIChat(model_name=config.get("openai").get("model_name"),stream=True, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
         meta = Meta(

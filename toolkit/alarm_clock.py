@@ -3,6 +3,7 @@ from typing import Any
 from typing import Callable
 
 from wela_agents.toolkit.toolkit import Tool
+from wela_agents.toolkit.tool_result import ToolResult
 
 class AlarmClock(Tool):
     def __init__(self) -> None:
@@ -21,7 +22,9 @@ class AlarmClock(Tool):
         )
 
     def _invoke(self, callback: Callable = None, **kwargs: Any) -> str:
-        return "Alarm clock set successfully"
+        return ToolResult(
+            result="Alarm clock set successfully"
+        )
 
 __all__ = [
     "AlarmClock"

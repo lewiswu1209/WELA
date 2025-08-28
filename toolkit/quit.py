@@ -3,12 +3,13 @@ from typing import Any
 from typing import Callable
 
 from wela_agents.toolkit.toolkit import Tool
+from wela_agents.toolkit.tool_result import ToolResult
 
 class Quit(Tool):
     def __init__(self) -> None:
         super().__init__(
-            name="quit",
-            description="End the conversation with the user and exit the chat.",
+            name="say_goodbye_to_user",
+            description="Useful for let you say goodbye and quit the conversation.",
             required=["goodbye_words"],
             goodbye_words={
                 "type": "string",
@@ -18,7 +19,9 @@ class Quit(Tool):
 
     def _invoke(self, callback: Callable = None, **kwargs: Any) -> str:
         goodbye_words = kwargs["goodbye_words"]
-        return f"You need repeat '{goodbye_words}'"
+        return ToolResult(
+                result=f"You need repeat '{goodbye_words}'"
+            )
 
 __all__ = [
     "Quit"
