@@ -223,11 +223,13 @@ Response directly with the translated text, do not add any other content.'''
 
     def __on_chat_started(self) -> None:
         self.__chat_box.reset()
+        self.__chat_box.stop_hide_timer()
         self.__status = "working"
         self.__on_chat_updated("对方正在输入……")
         self.__chat_box.set_border_color("LightSalmon")
 
     def __on_chat_updated(self, text: str) -> None:
+        self.__chat_box.stop_hide_timer()
         match = re.search(r'(?:<think>)?.*?</think>(.*)', text, re.DOTALL)
         if match:
             text = match.group(1).strip()
