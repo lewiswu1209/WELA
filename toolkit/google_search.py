@@ -6,12 +6,13 @@ from typing import Dict
 from typing import Callable
 
 from wela_agents.toolkit.toolkit import Tool
+from wela_agents.toolkit.tool_result import ToolResult
 
 class GoogleSearch(Tool):
 
     def __init__(self, api_key: str, search_engine_id=str, proxies: Dict[str, Any] = None) -> None:
         super().__init__(
-            name="google_search",
+            name="search_google",
             description="Use Google to search information on the Internet.",
             required=["query"],
             query={
@@ -42,9 +43,13 @@ Link: {result["link"]}
 Snippet: {result["snippet"]}
 =========================================
 """
-            return search_results.strip()
+            return ToolResult(
+                result=search_results.strip()
+            )
         except Exception as e:
-            return f"{e}"
+            return ToolResult(
+                result=f"{e}"
+            )
 
 __all__ = [
     "GoogleSearch"

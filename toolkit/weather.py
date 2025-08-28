@@ -6,6 +6,7 @@ from typing import Callable
 from curl_cffi import requests
 
 from wela_agents.toolkit.toolkit import Tool
+from wela_agents.toolkit.tool_result import ToolResult
 
 def convert_time_format(time_str: str) -> str:
     time_int = int(time_str)
@@ -18,7 +19,7 @@ class Weather(Tool):
     def __init__(self) -> None:
         super().__init__(
             name="get_weather_forecast",
-            description="Get the weather forecast for a given city",
+            description="Get the weather forecast for the given city",
             required=["city"],
             city={
                 "type": "string",
@@ -56,9 +57,13 @@ class Weather(Tool):
                     hourly_time = convert_time_format(hourly["time"])
                     forecast_str += f'''|{hourly_time}|{hourly["weatherDesc"][0]["value"]}|{hourly["tempC"]}({hourly["FeelsLikeC"]})°C|{hourly["winddir16Point"]} {hourly["windspeedKmph"]}-{hourly["WindGustKmph"]} km/h|
 '''
-            return forecast_str
+            return ToolResult(
+                result=forecast_str
+            )
         except Exception as e:
-            return f"{e}"
+            return ToolResult(
+                result=f"{e}"
+            )
 
 __all__ = [
     "Weather"

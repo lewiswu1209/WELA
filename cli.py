@@ -16,6 +16,7 @@ from toolkit.weather import Weather
 from toolkit.web_browser import WebBrowser
 from toolkit.web_browser import WebBrowserScreenshot
 from toolkit.google_search import GoogleSearch
+from toolkit.screen_shot import ScreenShot
 from wela_agents.agents.meta import Meta
 from wela_agents.models.openai_chat import OpenAIChat
 from wela_agents.toolkit.toolkit import Toolkit
@@ -38,16 +39,18 @@ class ToolMessage(ToolCallback):
         if event.tool_name == "quit":
             pass
         else:
-            if "--debug" in sys.argv[1:]:
-                print("准备使用工具:{}\n参数:\n{}".format(event.tool_name, event.arguments))
+            print("· 我将要使用工具:`{}`".format(event.tool_name))
+            for param, value in event.arguments.items():
+                print("·  - 参数`{}`的值为: `{}`".format(param, value))
 
     def after_tool_call(self, event: ToolEvent) -> None:
         if event.tool_name == "quit":
             global need_continue
             need_continue = False
         else:
-            if "--debug" in sys.argv[1:]:
-                print("工具'{}'的结果:\n{}".format(event.tool_name, event.result))
+            print("· 工具`{}`的结果:".format(event.tool_name))
+            for line in event.result.get("result", "").split("\n"):
+                print("· {}".format(line))
 
 def load_config(config_file_path: str = "config.yaml") -> Dict[str, Any]:
     config = None
@@ -77,7 +80,12 @@ def parse_user_input() -> Tuple[str, str, str]:
     else:
         return None, None, user_input
 
-def build_meta(config: Dict, callback: ToolCallback = None, stream: bool=True, max_completion_tokens: Optional[int] = NOT_GIVEN) -> Meta:
+def build_meta(
+        config: Dict,
+        callback: ToolCallback = None,
+        stream: bool=True,
+        max_completion_tokens: Optional[int] = NOT_GIVEN
+    ) -> Meta:
     proxy = config.get("proxy", None)
     if proxy:
         proxies = {
@@ -137,9 +145,29 @@ def build_meta(config: Dict, callback: ToolCallback = None, stream: bool=True, m
             retriever = None
     else:
         retriever = None
-    tool_model = OpenAIChat(model_name=config.get("openai").get("model_name"),stream=False, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
-    meta_model = OpenAIChat(model_name=config.get("openai").get("model_name"), stream=stream, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
-    toolkit = Toolkit([Quit(), Weather(), GoogleSearch(config.get("google_custom_search").get("api_key"), config.get("google_custom_search").get("search_engine_id"), proxies), WebBrowser(headless=False, proxy=proxy), WebBrowserScreenshot(model=tool_model, headless=False, proxy=proxy)], callback)
+    tool_model = OpenAIChat(
+        model_name=config.get("openai").get("model_name"),
+        stream=False,
+        api_key=config.get("openai").get("api_key"),
+        base_url=config.get("openai").get("base_url")
+    )
+    meta_model = OpenAIChat(
+        model_name=config.get("openai").get("model_name"),
+        stream=stream,
+        api_key=config.get("openai").get("api_key"),
+        base_url=config.get("openai").get("base_url")
+    )
+    toolkit = Toolkit(
+        [
+            Quit(),
+            Weather(),
+            GoogleSearch(config.get("google_custom_search").get("api_key"), config.get("google_custom_search").get("search_engine_id"), proxies),
+            ScreenShot(),
+            WebBrowser(headless=False, proxy=proxy),
+            WebBrowserScreenshot(model=tool_model, headless=False, proxy=proxy)
+        ],
+        callback
+    )
 
     return Meta(
         model=meta_model,
@@ -160,7 +188,9 @@ if __name__ == "__main__":
         if command:
             if command=="reset":
                 meta.reset_memory()
-                print("- Resetting completed successfully.")
+                print("· Resetting completed successfully.")
+            else:
+                print("· Unknown command: {}".format(command))
         else:
             input_message = UserMessageTemplate(ContentTemplate(
                 [
@@ -170,15 +200,16 @@ if __name__ == "__main__":
             )).to_message()
             response = meta.predict(__input__=[input_message])
             if not meta.model.streaming:
-                print("- {}".format(response["content"]))
+                for line in response.get("content", "").split("\n"):
+                    print("· {}".format(line))
             else:
                 processed_token_count = 0
                 is_before_first_token = True
                 for token in response:
                     if is_before_first_token:
-                        print("- ", end="")
+                        print("· ", end="")
                         is_before_first_token = False
-                    print(token["content"][processed_token_count:], end="")
+                    print(token["content"][processed_token_count:].replace("\n", "\n· "), end="")
                     processed_token_count = len(token["content"])
                 print("")
         if need_continue:

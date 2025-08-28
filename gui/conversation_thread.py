@@ -52,15 +52,17 @@ class ConversationThread(QThread, ToolCallback):
         elif event.tool_name == "set_alarm_clock":
             self.set_alarm_clock.emit(event.arguments["date_time"], event.arguments["reason"])
         else:
-            if "--debug" in sys.argv[1:]:
-                self.conversation_changed.emit("准备使用工具:{}\n参数:\n{}".format(event.tool_name, event.arguments))
+            self.conversation_changed.emit("我将要使用工具:`{}`".format(event.tool_name))
+            for param, value in event.arguments.items():
+                self.conversation_changed.emit(" - 参数`{}`的值为: `{}`".format(param, value))
 
     def after_tool_call(self, event: ToolEvent) -> None:
         if event.tool_name == "quit":
             self.__need_quit = True
         else:
-            if "--debug" in sys.argv[1:]:
-                self.conversation_changed.emit("工具'{}'的结果:\n{}".format(event.tool_name, event.result))
+            self.conversation_changed.emit("工具`{}`的结果:".format(event.tool_name))
+            for line in event.result.get("result", "").split("\n"):
+                self.conversation_changed.emit(line)
 
 __all__ = [
     "ConversationThread"
