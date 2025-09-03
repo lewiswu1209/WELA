@@ -22,6 +22,7 @@ from gui.speech_recognition_thread import model
 from wela_agents.agents.meta import Meta
 from wela_agents.models.openai_chat import OpenAIChat
 from wela_agents.toolkit.toolkit import Toolkit
+from wela_agents.embedding.text_embedding import TextEmbedding
 from wela_agents.retriever.qdrant_retriever import QdrantRetriever
 from wela_agents.memory.openai_chat.window_qdrant_memory import WindowQdrantMemory
 
@@ -47,12 +48,15 @@ class Initializer(QObject):
         with open(os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), "config.yaml"), encoding="utf-8") as f:
             config = yaml.load(f, Loader=yaml.FullLoader)
 
+        embedding = None
+
         self.signal.conversation_changed.emit("加载记忆模块")
         if config.get("memory", None):
             memory_key = config.get("memory").get("memory_key", "memory")
             limit = config.get("memory").get("limit", 15)
             window_size = config.get("memory").get("window_size", 5)
             score_threshold = config.get("memory").get("score_threshold", 0.6)
+            embedding = TextEmbedding("iic/nlp_gte_sentence-embedding_chinese-small") if embedding is None else embedding
             if config.get("memory").get("qdrant").get("type") == "cloud":
                 qdrant_client = QdrantClient(
                     url=config.get("memory").get("qdrant").get("url"),
@@ -67,7 +71,8 @@ class Initializer(QObject):
 
             try:
                 memory = WindowQdrantMemory(
-                    memory_key=memory_key, 
+                    memory_key=memory_key,
+                    embedding=embedding,
                     qdrant_client=qdrant_client,
                     limit=limit,
                     window_size=window_size,
@@ -85,6 +90,7 @@ class Initializer(QObject):
             retriever_key = config.get("retriever").get("retriever_key", "retriever")
             limit = config.get("retriever").get("limit", 4)
             score_threshold = config.get("retriever").get("score_threshold", 0.6)
+            embedding = TextEmbedding("iic/nlp_gte_sentence-embedding_chinese-small") if embedding is None else embedding
             if config.get("retriever").get("qdrant").get("type") == "cloud":
                 qdrant_client = QdrantClient(
                     url=config.get("retriever").get("qdrant").get("url"),
@@ -97,7 +103,7 @@ class Initializer(QObject):
             else:
                 qdrant_client = QdrantClient(":memory:")
             try:
-                retriever = QdrantRetriever(retriever_key=retriever_key, qdrant_client=qdrant_client)
+                retriever = QdrantRetriever(retriever_key=retriever_key, embedding=embedding, qdrant_client=qdrant_client)
             except (UnexpectedResponse, ValueError):
                 self.signal.conversation_changed.emit("知识库加载失败，将在没有知识库的情况下工作")
                 retriever = None

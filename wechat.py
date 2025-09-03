@@ -27,6 +27,7 @@ from wela_agents.models.openai_chat import OpenAIChat
 from wela_agents.toolkit.toolkit import Toolkit
 from wela_agents.callback.event import ToolEvent
 from wela_agents.callback.callback import ToolCallback
+from wela_agents.embedding.text_embedding import TextEmbedding
 from wela_agents.retriever.qdrant_retriever import QdrantRetriever
 from wela_agents.schema.template.openai_chat import ContentTemplate
 from wela_agents.schema.template.openai_chat import TextContentTemplate
@@ -70,6 +71,7 @@ def load_config(config_file_path: str = "config.yaml") -> Dict[str, Any]:
 
 def build_meta(config: Dict, callback: ToolCallback = None, stream: bool=True, max_completion_tokens: Optional[int] = None) -> Meta:
     proxy = config.get("proxy", None)
+    embedding = None
     if proxy:
         proxies = {
             "http": proxy,
@@ -83,6 +85,7 @@ def build_meta(config: Dict, callback: ToolCallback = None, stream: bool=True, m
         limit = config.get("memory").get("limit", 15)
         window_size = config.get("memory").get("window_size", 5)
         score_threshold = config.get("memory").get("score_threshold", 0.6)
+        embedding = TextEmbedding("iic/nlp_gte_sentence-embedding_chinese-small") if embedding is None else embedding
         if config.get("memory").get("qdrant").get("type") == "cloud":
             qdrant_client = QdrantClient(
                 url=config.get("memory").get("qdrant").get("url"),
@@ -96,7 +99,8 @@ def build_meta(config: Dict, callback: ToolCallback = None, stream: bool=True, m
             qdrant_client = QdrantClient(":memory:")
         try:
             memory = WindowQdrantMemory(
-                memory_key=memory_key, 
+                memory_key=memory_key,
+                embedding=embedding,
                 qdrant_client=qdrant_client,
                 limit=limit,
                 window_size=window_size,
@@ -111,6 +115,7 @@ def build_meta(config: Dict, callback: ToolCallback = None, stream: bool=True, m
         retriever_key = config.get("retriever").get("retriever_key", "retriever")
         limit = config.get("retriever").get("limit", 4)
         score_threshold = config.get("retriever").get("score_threshold", 0.6)
+        embedding = TextEmbedding("iic/nlp_gte_sentence-embedding_chinese-small") if embedding is None else embedding
         if config.get("retriever").get("qdrant").get("type") == "cloud":
             qdrant_client = QdrantClient(
                 url=config.get("retriever").get("qdrant").get("url"),
@@ -123,7 +128,7 @@ def build_meta(config: Dict, callback: ToolCallback = None, stream: bool=True, m
         else:
             qdrant_client = QdrantClient(":memory:")
         try:
-            retriever = QdrantRetriever(retriever_key=retriever_key, qdrant_client=qdrant_client)
+            retriever = QdrantRetriever(retriever_key=retriever_key, embedding=embedding, qdrant_client=qdrant_client)
         except (UnexpectedResponse, ValueError):
             retriever = None
     else:
@@ -139,7 +144,7 @@ def build_meta(config: Dict, callback: ToolCallback = None, stream: bool=True, m
         reasoning_effort=config.get("openai").get("reasoning_effort"),
         verbosity=config.get("openai").get("verbosity"),
         memory=memory,
-        toolkit=None,
+        # toolkit=toolkit,
         retriever=retriever
     )
 

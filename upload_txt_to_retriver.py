@@ -9,6 +9,7 @@ from typing import List
 from qdrant_client import QdrantClient
 
 from wela_agents.schema.document.document import Document
+from wela_agents.embedding.text_embedding import TextEmbedding
 from wela_agents.retriever.qdrant_retriever import QdrantRetriever
 
 def split_text_by_paragraphs(text: str, max_chars: int) -> List[str]:
@@ -100,10 +101,11 @@ if __name__ == "__main__":
     retriever_key = config.get("retriever").get("retriever_key", "retriever")
     url = config.get("retriever").get("qdrant").get("url")
     api_key = config.get("retriever").get("qdrant").get("api_key")
+    embedding = TextEmbedding("iic/nlp_gte_sentence-embedding_chinese-small")
 
     qdrant_client = QdrantClient(
         url = url,
         api_key = api_key
     )
-    retriever = QdrantRetriever(retriever_key, qdrant_client=qdrant_client)
+    retriever = QdrantRetriever(retriever_key, embedding=embedding, qdrant_client=qdrant_client)
     retriever.add_documents(docs)
