@@ -8,15 +8,19 @@ from typing import Dict
 from typing import Tuple
 from typing import Optional
 from openai._types import NOT_GIVEN
+from pexpect.popen_spawn import PopenSpawn
 from qdrant_client import QdrantClient
 from qdrant_client.http.exceptions import UnexpectedResponse
 
 from toolkit.quit import Quit
 from toolkit.weather import Weather
+from toolkit.term.term import TermReader
+from toolkit.term.term import TermWriter
+from toolkit.term.term import TermControl
 from toolkit.web_browser import WebBrowser
 from toolkit.web_browser import WebBrowserScreenshot
-from toolkit.google_search import GoogleSearch
 from toolkit.screen_shot import ScreenShot
+from toolkit.google_search import GoogleSearch
 from wela_agents.agents.meta import Meta
 from wela_agents.models.openai_chat import OpenAIChat
 from wela_agents.toolkit.toolkit import Toolkit
@@ -163,6 +167,7 @@ def build_meta(
         api_key=config.get("openai").get("api_key"),
         base_url=config.get("openai").get("base_url")
     )
+    shell = PopenSpawn("cmd.exe", encoding="gbk")
     toolkit = Toolkit(
         [
             Quit(),
@@ -170,7 +175,10 @@ def build_meta(
             GoogleSearch(config.get("google_custom_search").get("api_key"), config.get("google_custom_search").get("search_engine_id"), proxies),
             ScreenShot(),
             WebBrowser(headless=False, proxy=proxy),
-            WebBrowserScreenshot(model=tool_model, headless=False, proxy=proxy)
+            WebBrowserScreenshot(model=tool_model, headless=False, proxy=proxy),
+            TermWriter(shell=shell),
+            TermReader(),
+            TermControl(shell=shell)
         ],
         callback
     )

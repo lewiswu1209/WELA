@@ -9,9 +9,13 @@ from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtCore import pyqtSignal
 from qdrant_client import QdrantClient
 from qdrant_client.http.exceptions import UnexpectedResponse
+from pexpect.popen_spawn import PopenSpawn
 
 from toolkit.quit import Quit
 from toolkit.weather import Weather
+from toolkit.term.term import TermReader
+from toolkit.term.term import TermWriter
+from toolkit.term.term import TermControl
 from toolkit.screen_shot import ScreenShot
 from toolkit.web_browser import WebBrowser
 from toolkit.web_browser import WebBrowserScreenshot
@@ -121,7 +125,22 @@ class Initializer(QObject):
         else:
             proxies = None
         tool_model = OpenAIChat(model_name=config.get("openai").get("model_name"),stream=False, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
-        toolkit = Toolkit([ScreenShot(), AlarmClock(), Quit(), Weather(), GoogleSearch(config.get("google_custom_search").get("api_key"), config.get("google_custom_search").get("search_engine_id"), proxies), WebBrowser(headless=False, proxy=proxy), WebBrowserScreenshot(model=tool_model, headless=False, proxy=proxy)], None)
+        shell = PopenSpawn("cmd.exe", encoding="gbk")
+        toolkit = Toolkit(
+            [
+                ScreenShot(),
+                AlarmClock(),
+                Quit(),
+                Weather(),
+                GoogleSearch(config.get("google_custom_search").get("api_key"), config.get("google_custom_search").get("search_engine_id"), proxies),
+                WebBrowser(headless=False, proxy=proxy),
+                WebBrowserScreenshot(model=tool_model, headless=False, proxy=proxy),
+                TermWriter(shell=shell),
+                TermReader(),
+                TermControl(shell=shell)
+            ],
+            None
+        )
         self.signal.conversation_changed.emit("加载人物性格")
         meta_model = OpenAIChat(model_name=config.get("openai").get("model_name"),stream=True, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
         meta = Meta(

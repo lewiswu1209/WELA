@@ -1,7 +1,9 @@
 PyQt5
 flask
 funasr
+psutil
 pyyaml
+pexpect
 pyaudio
 keyboard
 markdown
