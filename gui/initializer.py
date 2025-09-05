@@ -132,7 +132,7 @@ class Initializer(QObject):
                 AlarmClock(),
                 Quit(),
                 Weather(),
-                GoogleSearch(config.get("google_custom_search").get("api_key"), config.get("google_custom_search").get("search_engine_id"), proxies),
+                GoogleSearch(embedding, config.get("google_custom_search").get("api_key"), config.get("google_custom_search").get("search_engine_id"), proxies),
                 WebBrowser(headless=False, proxy=proxy),
                 WebBrowserScreenshot(model=tool_model, headless=False, proxy=proxy),
                 TermWriter(shell=shell),
