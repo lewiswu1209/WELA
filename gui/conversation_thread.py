@@ -19,6 +19,7 @@ class ConversationThread(QThread, ToolCallback):
     conversation_finished= pyqtSignal()
     agent_require_quit = pyqtSignal()
     set_alarm_clock = pyqtSignal(str, str)
+    show_widget = pyqtSignal(bool)
 
     def __init__(self, parent: QObject = None) -> None:
         super().__init__(parent)
@@ -51,6 +52,9 @@ class ConversationThread(QThread, ToolCallback):
             pass
         elif event.tool_name == "set_alarm_clock":
             self.set_alarm_clock.emit(event.arguments["date_time"], event.arguments["reason"])
+        elif event.tool_name == "capture_user_screen":
+            self.show_widget.emit(False)
+            time.sleep(0.05)
         else:
             self.conversation_changed.emit("我将要使用工具:`{}`".format(event.tool_name))
             for param, value in event.arguments.items():
@@ -59,6 +63,8 @@ class ConversationThread(QThread, ToolCallback):
     def after_tool_call(self, event: ToolEvent) -> None:
         if event.tool_name == "quit":
             self.__need_quit = True
+        elif event.tool_name == "capture_user_screen":
+            self.show_widget.emit(True)
         else:
             self.conversation_changed.emit("工具`{}`的结果:".format(event.tool_name))
             for line in event.result.get("result", "").split("\n"):

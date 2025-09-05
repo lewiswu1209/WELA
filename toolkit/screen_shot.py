@@ -15,7 +15,7 @@ from wela_agents.toolkit.tool_result import Attachment
 class ScreenShot(Tool):
     def __init__(self) -> None:
         super().__init__(
-            name="capture_user_screenshot",
+            name="capture_user_screen",
             description="Get the user's screenshot.",
             required=["mode"],
             mode={
@@ -35,7 +35,7 @@ class ScreenShot(Tool):
                 active_window = gw.getActiveWindow()
                 if not active_window:
                     raise Exception("无法获取当前活动窗口")
-                
+
                 # 捕获窗口区域
                 left, top = active_window.topleft
                 right, bottom = active_window.bottomright
@@ -47,7 +47,7 @@ class ScreenShot(Tool):
             screenshot = screenshot.convert('RGB')
             # 计算缩放尺寸：宽度固定为600，等比例缩放，宽度不足600则不缩放
             original_width, original_height = screenshot.size
-            
+
             if original_width > target_width:
                 scale_ratio = target_width / original_width
                 target_height = int(original_height * scale_ratio)

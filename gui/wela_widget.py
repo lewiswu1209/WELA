@@ -119,6 +119,13 @@ class WelaWidget(QWidget):
             self.__movie.stop()
             self.__movie.frameChanged.disconnect(self.__check_last_frame)
 
+    def __show_widget(self, show_widget: bool):
+        if show_widget:
+            self.show()
+        else:
+            self.hide()
+            self.__chat_box.hide()
+
     def __start_conversation(self, text: str) -> None:
         content_list = [ImageContentTemplate(image_url=encoded_image) for encoded_image in self.__whiteboard]
         content_list.append(TextContentTemplate(StringPromptTemplate(text)))
@@ -293,6 +300,7 @@ Response directly with the translated text, do not add any other content.'''
         self.__conversation_thread.conversation_changed.connect(self.__on_chat_updated)
         self.__conversation_thread.conversation_finished.connect(self.__on_chat_finished)
         self.__conversation_thread.set_alarm_clock.connect(self.__schedule)
+        self.__conversation_thread.show_widget.connect(self.__show_widget)
 
     def __on_speech_recognition_created(self, model: AutoModel) -> None:
         self.__speech_recognition_thread = SpeechRecognitionThread(model = model)
