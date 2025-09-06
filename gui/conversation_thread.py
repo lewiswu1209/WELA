@@ -48,7 +48,7 @@ class ConversationThread(QThread, ToolCallback):
             self.agent_require_quit.emit()
 
     def before_tool_call(self, event: ToolEvent) -> None:
-        if event.tool_name == "quit":
+        if event.tool_name == "say_goodbye_to_user":
             pass
         elif event.tool_name == "set_alarm_clock":
             self.set_alarm_clock.emit(event.arguments["date_time"], event.arguments["reason"])
@@ -61,7 +61,7 @@ class ConversationThread(QThread, ToolCallback):
                 self.conversation_changed.emit(" - 参数`{}`的值为: `{}`".format(param, value))
 
     def after_tool_call(self, event: ToolEvent) -> None:
-        if event.tool_name == "quit":
+        if event.tool_name == "say_goodbye_to_user":
             self.__need_quit = True
         elif event.tool_name == "capture_user_screen":
             self.show_widget.emit(True)

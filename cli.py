@@ -41,7 +41,7 @@ need_continue = True
 
 class ToolMessage(ToolCallback):
     def before_tool_call(self, event: ToolEvent) -> None:
-        if event.tool_name == "quit":
+        if event.tool_name == "say_goodbye_to_user":
             pass
         else:
             print("· 我将要使用工具:`{}`".format(event.tool_name))
@@ -49,7 +49,7 @@ class ToolMessage(ToolCallback):
                 print("·  - 参数`{}`的值为: `{}`".format(param, value))
 
     def after_tool_call(self, event: ToolEvent) -> None:
-        if event.tool_name == "quit":
+        if event.tool_name == "say_goodbye_to_user":
             global need_continue
             need_continue = False
         else:

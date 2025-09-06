@@ -8,8 +8,8 @@ from wela_agents.toolkit.tool_result import ToolResult
 class Quit(Tool):
     def __init__(self) -> None:
         super().__init__(
-            name="quit",
-            description="End the conversation with the user and exit the chat.",
+            name="say_goodbye_to_user",
+            description="Useful for let you say goodbye and quit the conversation.",
             required=["goodbye_words"],
             goodbye_words={
                 "type": "string",
