@@ -38,24 +38,33 @@ from wela_agents.schema.template.prompt_template import StringPromptTemplate
 from wela_agents.memory.openai_chat.window_qdrant_memory import WindowQdrantMemory
 
 need_continue = True
+emotion_map = {
+    '✿': '😀',
+    '⍣': '😭',
+    'ꙮ': '😡',
+    '⸎': '😨',
+    '꠸': '😒',
+    '۞': '😮',
+    '꙾': '🥱'
+}
 
 class ToolMessage(ToolCallback):
     def before_tool_call(self, event: ToolEvent) -> None:
         if event.tool_name == "say_goodbye_to_user":
             pass
         else:
-            print("· 我将要使用工具:`{}`".format(event.tool_name))
+            print("🔧   < `{}`".format(event.tool_name))
             for param, value in event.arguments.items():
-                print("·  - 参数`{}`的值为: `{}`".format(param, value))
+                print("🔧   < \t\t`{}`: `{}`".format(param, value))
 
     def after_tool_call(self, event: ToolEvent) -> None:
         if event.tool_name == "say_goodbye_to_user":
             global need_continue
             need_continue = False
         else:
-            print("· 工具`{}`的结果:".format(event.tool_name))
+            print("📜   < `{}` response:".format(event.tool_name))
             for line in event.result.get("result", "").split("\n"):
-                print("· {}".format(line))
+                print("📜   < {}".format(line))
 
 def load_config(config_file_path: str = "config.yaml") -> Dict[str, Any]:
     config = None
@@ -65,7 +74,7 @@ def load_config(config_file_path: str = "config.yaml") -> Dict[str, Any]:
     return config
 
 def parse_user_input() -> Tuple[str, str, str]:
-    user_input = input("> ")
+    user_input = input("wela > ")
     if user_input.startswith("@image:"):
         remaining_input = user_input[len("@image:"):].strip()
         parts = remaining_input.split(" ", 1)
@@ -202,9 +211,9 @@ if __name__ == "__main__":
         if command:
             if command=="reset":
                 meta.reset_memory()
-                print("· Resetting completed successfully.")
+                print("💻   < Resetting completed successfully.")
             else:
-                print("· Unknown command: {}".format(command))
+                print("💻   < Unknown command: {}".format(command))
         else:
             input_message = UserMessageTemplate(ContentTemplate(
                 [
@@ -214,17 +223,37 @@ if __name__ == "__main__":
             )).to_message()
             response = meta.predict(__input__=[input_message])
             if not meta.model.streaming:
-                for line in response.get("content", "").split("\n"):
-                    print("· {}".format(line))
+                response_content = response.get("content", "")
+                for idx, line in enumerate(response_content.split("\n")):
+                    if idx == 0:
+                        first_char = line[0]
+                        if first_char in emotion_map:
+                            emotion = emotion_map[first_char]
+                            print( "{}   < ".format(emotion) + line[1:].lstrip() )
+                    else:
+                        print("     < " + line)
             else:
                 processed_token_count = 0
-                is_before_first_token = True
+                shown_prompt = False
                 for token in response:
-                    if is_before_first_token:
-                        print("· ", end="")
-                        is_before_first_token = False
-                    print(token["content"][processed_token_count:].replace("\n", "\n· "), end="")
-                    processed_token_count = len(token["content"])
+                    token_content = token["content"]
+                    if token_content == "":
+                        continue
+                    else:
+                        if not shown_prompt:
+                            first_char = token_content[0]
+                            if first_char in emotion_map:
+                                emotion = emotion_map[first_char]
+                                print("{}   < ".format(emotion), end="")
+                                print(token_content[1:].lstrip(), end="")
+                            else:
+                                print("😐   < ", end="")
+                                print(token_content.replace("\n", "\n      "), end="")
+                            shown_prompt = True
+                            processed_token_count = len(token_content)
+                            continue
+                        print(token_content[processed_token_count:].lstrip().replace("\n", "\n       "), end="")
+                        processed_token_count = len(token_content)
                 print("")
         if need_continue:
             command, image_url, text_content = parse_user_input()

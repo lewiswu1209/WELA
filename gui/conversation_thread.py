@@ -56,9 +56,10 @@ class ConversationThread(QThread, ToolCallback):
             self.show_widget.emit(False)
             time.sleep(0.05)
         else:
-            self.conversation_changed.emit("我将要使用工具:`{}`".format(event.tool_name))
+            tips = "我将要使用工具:`{}`<br/>".format(event.tool_name)
             for param, value in event.arguments.items():
-                self.conversation_changed.emit(" - 参数`{}`的值为: `{}`".format(param, value))
+                tips += " - 参数`{}`的值为: `{}`<br/>".format(param, value)
+            self.conversation_changed.emit(tips)
 
     def after_tool_call(self, event: ToolEvent) -> None:
         if event.tool_name == "say_goodbye_to_user":
@@ -66,9 +67,10 @@ class ConversationThread(QThread, ToolCallback):
         elif event.tool_name == "capture_user_screen":
             self.show_widget.emit(True)
         else:
-            self.conversation_changed.emit("工具`{}`的结果:".format(event.tool_name))
+            tips = "工具`{}`的结果:<br/>".format(event.tool_name)
             for line in event.result.get("result", "").split("\n"):
-                self.conversation_changed.emit(line)
+                tips += line + "<br/>"
+            self.conversation_changed.emit(tips)
 
 __all__ = [
     "ConversationThread"
