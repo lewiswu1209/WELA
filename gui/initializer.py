@@ -1,4 +1,5 @@
 
+import io
 import os
 import sys
 import yaml
@@ -125,6 +126,8 @@ class Initializer(QObject):
         else:
             proxies = None
         tool_model = OpenAIChat(model_name=config.get("openai").get("model_name"),stream=False, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
+        sys.stdout = io.StringIO()
+        sys.stderr = io.StringIO()
         shell = PopenSpawn("cmd.exe", encoding="gbk")
         toolkit = Toolkit(
             [
