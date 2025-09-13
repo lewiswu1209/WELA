@@ -33,25 +33,28 @@ class Alarm(QTimer):
     def dump(self, path = None) -> None:
         if not path:
             if platform.system() == "Windows":
-                path = os.environ["LOCALAPPDATA"] + "\\alarm.json"
+                path = os.path.join(os.environ["LOCALAPPDATA"], "alarm.json")
             elif platform.system() == "Linux":
-                path = os.environ["HOME"] + "/.alarm.json"
+                path = os.path.join(os.environ["HOME"], ".alarm.json")
         with open(path, "w", encoding="utf-8") as file:
             json.dump(self.__schedule, file)
 
     def load(self, path = None) -> None:
         if not path:
             if platform.system() == "Windows":
-                path = os.environ["LOCALAPPDATA"] + "\\alarm.json"
+                path = os.path.join(os.environ["LOCALAPPDATA"], "alarm.json")
             elif platform.system() == "Linux":
-                path = os.environ["HOME"] + "/.alarm.json"
+                path = path = os.path.join(os.environ["HOME"], ".alarm.json")
         if os.path.exists(path):
             with open(path, "r", encoding="utf-8") as file:
-                schedule_json = json.load(file)
-                for key, value in schedule_json.items():
-                    key_int = int(key)
-                    timestamp = int(time.time())
-                    if key_int > timestamp:
-                        self.__schedule[key_int] = value
+                try:
+                    schedule_json = json.load(file)
+                    for key, value in schedule_json.items():
+                        key_int = int(key)
+                        timestamp = int(time.time())
+                        if key_int > timestamp:
+                            self.__schedule[key_int] = value
+                except json.decoder.JSONDecodeError:
+                    pass
         else:
             self.__schedule = {}
