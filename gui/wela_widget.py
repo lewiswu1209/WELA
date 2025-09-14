@@ -46,6 +46,16 @@ from wela_agents.schema.template.openai_chat import ImageContentTemplate
 from wela_agents.schema.template.openai_chat import SystemMessageTemplate
 from wela_agents.schema.template.prompt_template import StringPromptTemplate
 
+emotion_map = {
+    '✿': 'happiness',
+    '⍣': 'sadness',
+    'ꙮ': 'anger',
+    '⸎': 'fear',
+    '꠸': 'disgust',
+    '۞': 'surprise',
+    '꙾': 'sleeping'
+}
+
 class WelaWidget(QWidget):
 
     def __init__(self, parent: QWidget = None) -> None:
@@ -100,8 +110,8 @@ class WelaWidget(QWidget):
         files = os.listdir(folder_path)
         file = os.path.join(folder_path, random.choice(files))
         pixmap = QPixmap(file)
-        width = 200
-        height = int(width * pixmap.height() / pixmap.width())
+        height = QApplication.desktop().availableGeometry().height() // 4
+        width = int(height * pixmap.width() / pixmap.height())
         self.__movie = QMovie(file)
         self.__movie.setScaledSize(QSize(width, height))
         self.__movie.frameChanged.connect(self.__check_last_frame)
@@ -147,6 +157,7 @@ class WelaWidget(QWidget):
 
     def __schedule(self, time_str, reason) -> None:
         self.__alarm.schedule(time_str, reason)
+        self.__alarm.dump()
 
     def __translate(self, text: str) -> None:
         system_locale = QLocale.system()
@@ -223,7 +234,6 @@ Response directly with the translated text, do not add any other content.'''
 
     def closeEvent(self, _) -> None:
         self.__alarm.stop()
-        self.__alarm.dump()
         self.__chat_box.hide()
         self.hide()
         QApplication.quit()
@@ -240,15 +250,6 @@ Response directly with the translated text, do not add any other content.'''
         match = re.search(r'(?:<think>)?.*?</think>(.*)', text, re.DOTALL)
         if match:
             text = match.group(1).strip()
-        emotion_map = {
-            '✿': 'happiness',
-            '⍣': 'sadness',
-            'ꙮ': 'anger',
-            '⸎': 'fear',
-            '꠸': 'disgust',
-            '۞': 'surprise',
-            '꙾': 'sleeping'
-        }
         if text:
             first_char = text[0]
             if 0 <= datetime.now().hour <= 5:
