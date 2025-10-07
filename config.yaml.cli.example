@@ -10,6 +10,12 @@ memory:
   limit: 15
   window_size: 5
   score_threshold: 0.6
+    vector_size: 1024
+  embedding:
+    type: openai
+    model_name: BAAI/bge-m3
+    base_url: https://api.siliconflow.cn/v1
+    api_key: <your-api-key>
   qdrant:
     # type: cloud
     # url: https://xxxxxx-xxxxx-xxxxx-xxxx-xxxxxxxxx.us-east.aws.cloud.qdrant.io
@@ -21,6 +27,12 @@ retriever:
   retriever_key: retriever
   limit: 4
   score_threshold: 0.6
+  vector_size: 1024
+  embedding:
+    type: openai
+    model_name: BAAI/bge-m3
+    base_url: https://api.siliconflow.cn/v1
+    api_key: <your-api-key>
   qdrant:
     type: cloud
     url: https://xxxxxx-xxxxx-xxxxx-xxxx-xxxxxxxxx.us-east.aws.cloud.qdrant.io
@@ -37,6 +49,10 @@ openai:
 google custom search:
   api_key: xxxxxxxxxxxxxxxxxxxxxxxxxxxx-xxxxxxxxxx
   search_engine_id: xxxxxxxxxxxxxxxxx
+  reranker:
+    type: Siliconflow
+    model_name: BAAI/bge-reranker-v2-m3
+    api_key: <your-api-key>
 prompt: |
   You are Wela, a caring friend and confidant. You're here to help with anything you can.
 

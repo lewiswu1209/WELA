@@ -27,6 +27,7 @@ from wela_agents.toolkit.toolkit import Toolkit
 from wela_agents.callback.event import ToolEvent
 from wela_agents.callback.callback import ToolCallback
 from wela_agents.embedding.text_embedding import TextEmbedding
+from wela_agents.embedding.openai_embedding import OpenAIEmbedding
 from wela_agents.retriever.qdrant_retriever import QdrantRetriever
 from wela_agents.schema.template.openai_chat import encode_image
 from wela_agents.schema.template.openai_chat import encode_clipboard_image
@@ -34,6 +35,7 @@ from wela_agents.schema.template.openai_chat import ContentTemplate
 from wela_agents.schema.template.openai_chat import TextContentTemplate
 from wela_agents.schema.template.openai_chat import UserMessageTemplate
 from wela_agents.schema.template.openai_chat import ImageContentTemplate
+from wela_agents.reranker.siliconflow_reranker import SiliconflowReRanker
 from wela_agents.schema.template.prompt_template import StringPromptTemplate
 from wela_agents.memory.openai_chat.window_qdrant_memory import WindowQdrantMemory
 
@@ -116,7 +118,14 @@ def build_meta(
         limit = config.get("memory").get("limit", 15)
         window_size = config.get("memory").get("window_size", 5)
         score_threshold = config.get("memory").get("score_threshold", 0.6)
-        embedding = TextEmbedding("iic/nlp_gte_sentence-embedding_chinese-small") if embedding is None else embedding
+        if config.get("memory").get("embedding").get("type") == "openai":
+            embedding = OpenAIEmbedding(
+                model_name=config.get("memory").get("embedding").get("model_name"),
+                base_url=config.get("memory").get("embedding").get("base_url"),
+                api_key=config.get("memory").get("embedding").get("api_key")
+            )
+        else:
+            embedding = TextEmbedding(model="iic/nlp_gte_sentence-embedding_chinese-small") if embedding is None else embedding
         if config.get("memory").get("qdrant").get("type") == "cloud":
             qdrant_client = QdrantClient(
                 url=config.get("memory").get("qdrant").get("url"),
@@ -133,6 +142,7 @@ def build_meta(
                 memory_key=memory_key,
                 embedding=embedding,
                 qdrant_client=qdrant_client,
+                vector_size=config.get("memory").get("vector_size"),
                 limit=limit,
                 window_size=window_size,
                 score_threshold=score_threshold
@@ -146,7 +156,14 @@ def build_meta(
         retriever_key = config.get("retriever").get("retriever_key", "retriever")
         limit = config.get("retriever").get("limit", 4)
         score_threshold = config.get("retriever").get("score_threshold", 0.6)
-        embedding = TextEmbedding("iic/nlp_gte_sentence-embedding_chinese-small") if embedding is None else embedding
+        if config.get("retriever").get("embedding").get("type") == "openai":
+            embedding = OpenAIEmbedding(
+                model_name=config.get("retriever").get("embedding").get("model_name"),
+                base_url=config.get("retriever").get("embedding").get("base_url"),
+                api_key=config.get("retriever").get("embedding").get("api_key")
+            )
+        else:
+            embedding = TextEmbedding(model="iic/nlp_gte_sentence-embedding_chinese-small") if embedding is None else embedding
         if config.get("retriever").get("qdrant").get("type") == "cloud":
             qdrant_client = QdrantClient(
                 url=config.get("retriever").get("qdrant").get("url"),
@@ -159,11 +176,12 @@ def build_meta(
         else:
             qdrant_client = QdrantClient(":memory:")
         try:
-            retriever = QdrantRetriever(retriever_key=retriever_key, embedding=embedding, qdrant_client=qdrant_client)
+            retriever = QdrantRetriever(retriever_key=retriever_key, embedding=embedding, qdrant_client=qdrant_client, vector_size=config.get("retriever").get("vector_size"))
         except (UnexpectedResponse, ValueError):
             retriever = None
     else:
         retriever = None
+
     tool_model = OpenAIChat(
         model_name=config.get("openai").get("model_name"),
         stream=False,
@@ -177,11 +195,15 @@ def build_meta(
         base_url=config.get("openai").get("base_url")
     )
     shell = PopenSpawn("cmd.exe", encoding="gbk")
+    reranker = SiliconflowReRanker(
+        model_name=config.get("google_custom_search").get("reranker").get("model_name"),
+        api_key=config.get("google_custom_search").get("reranker").get("api_key")
+    )
     toolkit = Toolkit(
         [
             Quit(),
             Weather(),
-            GoogleSearch(embedding, config.get("google_custom_search").get("api_key"), config.get("google_custom_search").get("search_engine_id"), proxies),
+            GoogleSearch(reranker, config.get("google_custom_search").get("api_key"), config.get("google_custom_search").get("search_engine_id"), proxies),
             ScreenShot(),
             WebBrowser(headless=False, proxy=proxy),
             WebBrowserScreenshot(model=tool_model, headless=False, proxy=proxy),

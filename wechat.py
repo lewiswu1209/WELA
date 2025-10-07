@@ -28,6 +28,7 @@ from wela_agents.toolkit.toolkit import Toolkit
 from wela_agents.callback.event import ToolEvent
 from wela_agents.callback.callback import ToolCallback
 from wela_agents.embedding.text_embedding import TextEmbedding
+from wela_agents.embedding.openai_embedding import OpenAIEmbedding
 from wela_agents.retriever.qdrant_retriever import QdrantRetriever
 from wela_agents.schema.template.openai_chat import ContentTemplate
 from wela_agents.schema.template.openai_chat import TextContentTemplate
@@ -85,7 +86,14 @@ def build_meta(config: Dict, callback: ToolCallback = None, stream: bool=True, m
         limit = config.get("memory").get("limit", 15)
         window_size = config.get("memory").get("window_size", 5)
         score_threshold = config.get("memory").get("score_threshold", 0.6)
-        embedding = TextEmbedding("iic/nlp_gte_sentence-embedding_chinese-small") if embedding is None else embedding
+        if config.get("memory").get("embedding").get("type") == "openai":
+            embedding = OpenAIEmbedding(
+                model_name=config.get("memory").get("embedding").get("model_name"),
+                base_url=config.get("memory").get("embedding").get("base_url"),
+                api_key=config.get("memory").get("embedding").get("api_key")
+            )
+        else:
+            embedding = TextEmbedding(model="iic/nlp_gte_sentence-embedding_chinese-small") if embedding is None else embedding
         if config.get("memory").get("qdrant").get("type") == "cloud":
             qdrant_client = QdrantClient(
                 url=config.get("memory").get("qdrant").get("url"),
@@ -102,6 +110,7 @@ def build_meta(config: Dict, callback: ToolCallback = None, stream: bool=True, m
                 memory_key=memory_key,
                 embedding=embedding,
                 qdrant_client=qdrant_client,
+                vector_size=config.get("memory").get("vector_size"),
                 limit=limit,
                 window_size=window_size,
                 score_threshold=score_threshold
@@ -115,7 +124,14 @@ def build_meta(config: Dict, callback: ToolCallback = None, stream: bool=True, m
         retriever_key = config.get("retriever").get("retriever_key", "retriever")
         limit = config.get("retriever").get("limit", 4)
         score_threshold = config.get("retriever").get("score_threshold", 0.6)
-        embedding = TextEmbedding("iic/nlp_gte_sentence-embedding_chinese-small") if embedding is None else embedding
+        if config.get("retriever").get("embedding").get("type") == "openai":
+            embedding = OpenAIEmbedding(
+                model_name=config.get("retriever").get("embedding").get("model_name"),
+                base_url=config.get("retriever").get("embedding").get("base_url"),
+                api_key=config.get("retriever").get("embedding").get("api_key")
+            )
+        else:
+            embedding = TextEmbedding(model="iic/nlp_gte_sentence-embedding_chinese-small") if embedding is None else embedding
         if config.get("retriever").get("qdrant").get("type") == "cloud":
             qdrant_client = QdrantClient(
                 url=config.get("retriever").get("qdrant").get("url"),
@@ -128,11 +144,12 @@ def build_meta(config: Dict, callback: ToolCallback = None, stream: bool=True, m
         else:
             qdrant_client = QdrantClient(":memory:")
         try:
-            retriever = QdrantRetriever(retriever_key=retriever_key, embedding=embedding, qdrant_client=qdrant_client)
+            retriever = QdrantRetriever(retriever_key=retriever_key, embedding=embedding, qdrant_client=qdrant_client, vector_size=config.get("retriever").get("vector_size"))
         except (UnexpectedResponse, ValueError):
             retriever = None
     else:
         retriever = None
+
     # tool_model = OpenAIChat(model_name=config.get("openai").get("model_name"),stream=False, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
     meta_model = OpenAIChat(model_name=config.get("openai").get("model_name"), stream=stream, api_key=config.get("openai").get("api_key"), base_url=config.get("openai").get("base_url"))
     # toolkit = Toolkit([Quit(), Weather(), GoogleSearch(proxies), WebBrowser(headless=False, proxy=proxy), WebBrowserScreenshot(model=tool_model, headless=False, proxy=proxy)], callback)
