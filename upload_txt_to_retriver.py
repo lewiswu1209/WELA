@@ -10,6 +10,7 @@ from qdrant_client import QdrantClient
 
 from wela_agents.schema.document.document import Document
 from wela_agents.embedding.text_embedding import TextEmbedding
+from wela_agents.embedding.openai_embedding import OpenAIEmbedding
 from wela_agents.retriever.qdrant_retriever import QdrantRetriever
 
 def split_text_by_paragraphs(text: str, max_chars: int) -> List[str]:
@@ -101,11 +102,18 @@ if __name__ == "__main__":
     retriever_key = config.get("retriever").get("retriever_key", "retriever")
     url = config.get("retriever").get("qdrant").get("url")
     api_key = config.get("retriever").get("qdrant").get("api_key")
-    embedding = TextEmbedding("iic/nlp_gte_sentence-embedding_chinese-small")
+    if config.get("retriever").get("embedding").get("type") == "openai":
+        embedding = OpenAIEmbedding(
+            model_name=config.get("retriever").get("embedding").get("model_name"),
+            base_url=config.get("retriever").get("embedding").get("base_url"),
+            api_key=config.get("retriever").get("embedding").get("api_key")
+        )
+    else:
+        embedding = TextEmbedding(model="iic/nlp_gte_sentence-embedding_chinese-small")
 
     qdrant_client = QdrantClient(
         url = url,
         api_key = api_key
     )
-    retriever = QdrantRetriever(retriever_key, embedding=embedding, qdrant_client=qdrant_client)
+    retriever = QdrantRetriever(retriever_key, embedding=embedding, qdrant_client=qdrant_client, vector_size=config.get("retriever").get("vector_size"))
     retriever.add_documents(docs)

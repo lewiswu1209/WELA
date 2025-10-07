@@ -9,7 +9,7 @@ from typing import Callable
 
 from wela_agents.toolkit.toolkit import Tool
 from wela_agents.toolkit.tool_result import ToolResult
-from wela_agents.embedding.text_embedding import TextEmbedding
+from wela_agents.reranker.reranker import Reranker
 
 def sort_key_snippet_score(item: Dict[str, str]) -> float:
     return item["snippet_score"]
@@ -25,7 +25,7 @@ def clean_up_snippets(items: List[dict]) -> None:
 
 class GoogleSearch(Tool):
 
-    def __init__(self, embedding: TextEmbedding, api_key: str, search_engine_id=str, proxies: Dict[str, Any] = None) -> None:
+    def __init__(self, reranker: Reranker, api_key: str, search_engine_id=str, proxies: Dict[str, Any] = None) -> None:
         super().__init__(
             name="google_search",
             description="Search the custom search engine using the search term.",
@@ -42,7 +42,7 @@ class GoogleSearch(Tool):
         self.__proxies = proxies
         self.__api_key = api_key
         self.__search_engine_id = search_engine_id
-        self.__embedding = embedding
+        self.__reranker = reranker
 
     def _invoke(self, callback: Callable = None, **kwargs: Any) -> str:
         search_term = kwargs["search_term"]
@@ -67,17 +67,19 @@ class GoogleSearch(Tool):
                     hits.extend( response.json().get("items", []) )
             clean_up_snippets(hits)
 
-            scored_snippet_hits = self.__embedding.compare_sentences(
-                source_sentence=[topic_description],
-                sentences_to_compare=[hit["snippet"] for hit in hits]
+            scored_snippet_hits = self.__reranker.rerank(
+                query=topic_description,
+                documents=[hit["snippet"] for hit in hits]
             )
-            scored_title_hits = self.__embedding.compare_sentences(
-                source_sentence=[topic_description],
-                sentences_to_compare=[hit["title"] for hit in hits]
+            scored_snippet_hits = sorted(scored_snippet_hits, key=lambda x: x["index"])
+            scored_title_hits = self.__reranker.rerank(
+                query=topic_description,
+                documents=[hit["title"] for hit in hits]
             )
+            scored_title_hits = sorted(scored_title_hits, key=lambda x: x["index"])
             results = []
             for idx, hit in enumerate(hits):
-                if scored_snippet_hits[idx]["score"] > 0.85 and scored_title_hits[idx]["score"] > 0.85:
+                if scored_snippet_hits[idx]["score"] > 0.60 and scored_title_hits[idx]["score"] > 0.60:
                     results.append(
                         {
                             "title": hit["title"],
