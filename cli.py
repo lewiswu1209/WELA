@@ -17,6 +17,7 @@ from toolkit.weather import Weather
 from toolkit.term.term import TermReader
 from toolkit.term.term import TermWriter
 from toolkit.term.term import TermControl
+from toolkit.write_file import WriteFile
 from toolkit.web_browser import WebBrowser
 from toolkit.web_browser import WebBrowserScreenshot
 from toolkit.screen_shot import ScreenShot
@@ -207,6 +208,7 @@ def build_meta(
             ScreenShot(),
             WebBrowser(headless=False, proxy=proxy),
             WebBrowserScreenshot(model=tool_model, headless=False, proxy=proxy),
+            WriteFile(),
             TermWriter(shell=shell),
             TermReader(),
             TermControl(shell=shell)

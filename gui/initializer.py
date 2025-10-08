@@ -17,6 +17,7 @@ from toolkit.weather import Weather
 from toolkit.term.term import TermReader
 from toolkit.term.term import TermWriter
 from toolkit.term.term import TermControl
+from toolkit.write_file import WriteFile
 from toolkit.screen_shot import ScreenShot
 from toolkit.web_browser import WebBrowser
 from toolkit.web_browser import WebBrowserScreenshot
@@ -159,6 +160,7 @@ class Initializer(QObject):
                 GoogleSearch(reranker, config.get("google_custom_search").get("api_key"), config.get("google_custom_search").get("search_engine_id"), proxies),
                 WebBrowser(headless=False, proxy=proxy),
                 WebBrowserScreenshot(model=tool_model, headless=False, proxy=proxy),
+                WriteFile(),
                 TermWriter(shell=shell),
                 TermReader(),
                 TermControl(shell=shell)
