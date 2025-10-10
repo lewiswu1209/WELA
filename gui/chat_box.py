@@ -39,7 +39,12 @@ class ChatBox(QWidget):
 
         self.__hide_timer = QTimer()
 
-    def start_hide_timer(self, msec: int) -> None:
+    def start_hide_timer(self, min_msec: int = 3000) -> None:
+        text_length = len( self.__text_edit.toPlainText() )
+        reading_time = text_length / (300 / 60000)
+        reading_time = int(reading_time)
+
+        msec = max(reading_time, min_msec)
         self.__hide_timer.singleShot(msec, self.__on_hide_timer)
 
     def stop_hide_timer(self) -> None:
