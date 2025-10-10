@@ -176,7 +176,8 @@ class Initializer(QObject):
             verbosity=config.get("openai").get("verbosity"),
             memory=memory,
             toolkit=toolkit,
-            retriever=retriever
+            retriever=retriever,
+            max_loop=50
         )
         self.signal.meta_created.emit(meta)
         self.signal.conversation_changed.emit("加载语音识别")

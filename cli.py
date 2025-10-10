@@ -77,7 +77,9 @@ def load_config(config_file_path: str = "config.yaml") -> Dict[str, Any]:
     return config
 
 def parse_user_input() -> Tuple[str, str, str]:
-    user_input = input("wela > ")
+    user_input = ""
+    while not user_input:
+        user_input = input("wela > ")
     if user_input.startswith("@image:"):
         remaining_input = user_input[len("@image:"):].strip()
         parts = remaining_input.split(" ", 1)
@@ -224,7 +226,8 @@ def build_meta(
         verbosity=config.get("openai").get("verbosity"),
         memory=memory,
         toolkit=toolkit,
-        retriever=retriever
+        retriever=retriever,
+        max_loop=50
     )
 
 if __name__ == "__main__":
@@ -276,7 +279,7 @@ if __name__ == "__main__":
                             shown_prompt = True
                             processed_token_count = len(token_content)
                             continue
-                        print(token_content[processed_token_count:].lstrip().replace("\n", "\n       "), end="")
+                        print(token_content[processed_token_count:].replace("\n", "\n       "), end="")
                         processed_token_count = len(token_content)
                 print("")
         if need_continue:

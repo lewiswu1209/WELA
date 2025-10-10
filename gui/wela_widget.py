@@ -76,7 +76,7 @@ class WelaWidget(QWidget):
         self.__label: QLabel = None
         self.__movie: QMovie = None
 
-        self.__change_status(status=self.__status)
+        self.__update_animation()
 
         self.__chat_box = ChatBox()
 
@@ -103,10 +103,8 @@ class WelaWidget(QWidget):
         self.__initialize_thread.started.connect(self.__initializer.initialize)
         self.__initialize_thread.start()
 
-    def __change_status(self, status = "normal") -> None:
-        if status not in ["normal", "working", "sleeping", "anger", "disgust", "fear", "happiness", "sadness", "surprise"]:
-            status = "normal"
-        folder_path = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), f"res/{status}")
+    def __update_animation(self) -> None:
+        folder_path = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), f"res/{self.__status}")
         files = os.listdir(folder_path)
         file = os.path.join(folder_path, random.choice(files))
         pixmap = QPixmap(file)
@@ -277,9 +275,9 @@ Response directly with the translated text, do not add any other content.'''
 
     def __on_chat_finished(self) -> None:
         self.__chat_box.set_border_color("LightSkyBlue")
-        self.__chat_box.start_hide_timer(9000)
+        self.__chat_box.start_hide_timer(1000)
         self.__timer.stop()
-        self.__timer.singleShot(10000, self.__on_status_timeout)
+        self.__timer.singleShot(10000, self.__reset_status)
 
     def __on_alarm(self, timestamp, reason) -> None:
         date_time = time.strftime("%Y-%m-%d %H:%M", time.gmtime(timestamp))
@@ -314,7 +312,8 @@ Response directly with the translated text, do not add any other content.'''
         if self.__movie.state() == QMovie.MovieState.NotRunning:
             if self.__old_status != self.__status or random.random() < 0.1:
                 self.__old_status = self.__status
-                self.__change_status(status=self.__status)
+                self.__update_animation()
+            self.__reset_status()
 
     def __on_initialize_completed(self) -> None:
         exit_action = QAction("退出", self)
@@ -349,7 +348,7 @@ Response directly with the translated text, do not add any other content.'''
         self.__alarm.load()
         self.__alarm.start(1000)
 
-    def __on_status_timeout(self) -> None:
+    def __reset_status(self) -> None:
         if 0 <= datetime.now().hour <= 5:
             self.__status="sleeping"
         else:

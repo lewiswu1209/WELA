@@ -162,7 +162,8 @@ def build_meta(config: Dict, callback: ToolCallback = None, stream: bool=True, m
         verbosity=config.get("openai").get("verbosity"),
         memory=memory,
         # toolkit=toolkit,
-        retriever=retriever
+        retriever=retriever,
+        max_loop=50
     )
 
 @flask.route("/gh", methods=["GET"])
@@ -234,7 +235,7 @@ def gh_process():
 
 if __name__ == "__main__":
     config = load_config()
-    meta = build_meta(config, stream=False, max_tokens=170)
+    meta = build_meta(config, stream=False)
     wechat_token = config.get("wechat_token")
     openids = config.get("openids")
     cache = ExpiringDict(max_len=100, max_age_seconds=360)
