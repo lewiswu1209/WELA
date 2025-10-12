@@ -8,34 +8,33 @@ from typing import Dict
 from typing import Tuple
 from typing import Optional
 from openai._types import NOT_GIVEN
-from pexpect.popen_spawn import PopenSpawn
 from qdrant_client import QdrantClient
 from qdrant_client.http.exceptions import UnexpectedResponse
 
 from toolkit.quit import Quit
+from toolkit.term import TermReader
+from toolkit.term import TermWriter
+from toolkit.term import CommandPrompt
 from toolkit.weather import Weather
-from toolkit.term.term import TermReader
-from toolkit.term.term import TermWriter
-from toolkit.term.term import TermControl
 from toolkit.write_file import WriteFile
 from toolkit.web_browser import WebBrowser
 from toolkit.web_browser import WebBrowserScreenshot
 from toolkit.screen_shot import ScreenShot
 from toolkit.google_search import GoogleSearch
 from wela_agents.agents.meta import Meta
-from wela_agents.models.openai_chat import OpenAIChat
 from wela_agents.toolkit.toolkit import Toolkit
 from wela_agents.callback.event import ToolEvent
 from wela_agents.callback.callback import ToolCallback
+from wela_agents.models.openai_chat import OpenAIChat
 from wela_agents.embedding.text_embedding import TextEmbedding
 from wela_agents.embedding.openai_embedding import OpenAIEmbedding
 from wela_agents.retriever.qdrant_retriever import QdrantRetriever
 from wela_agents.schema.template.openai_chat import encode_image
-from wela_agents.schema.template.openai_chat import encode_clipboard_image
 from wela_agents.schema.template.openai_chat import ContentTemplate
 from wela_agents.schema.template.openai_chat import TextContentTemplate
 from wela_agents.schema.template.openai_chat import UserMessageTemplate
 from wela_agents.schema.template.openai_chat import ImageContentTemplate
+from wela_agents.schema.template.openai_chat import encode_clipboard_image
 from wela_agents.reranker.siliconflow_reranker import SiliconflowReRanker
 from wela_agents.schema.template.prompt_template import StringPromptTemplate
 from wela_agents.memory.openai_chat.window_qdrant_memory import WindowQdrantMemory
@@ -197,7 +196,7 @@ def build_meta(
         api_key=config.get("openai").get("api_key"),
         base_url=config.get("openai").get("base_url")
     )
-    shell = PopenSpawn("cmd.exe", encoding="gbk")
+    shell = CommandPrompt(encoding="ansi")
     reranker = SiliconflowReRanker(
         model_name=config.get("google_custom_search").get("reranker").get("model_name"),
         api_key=config.get("google_custom_search").get("reranker").get("api_key")
@@ -212,8 +211,7 @@ def build_meta(
             WebBrowserScreenshot(model=tool_model, headless=False, proxy=proxy),
             WriteFile(),
             TermWriter(shell=shell),
-            TermReader(),
-            TermControl(shell=shell)
+            TermReader(shell=shell)
         ],
         callback
     )
