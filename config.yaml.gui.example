@@ -10,11 +10,15 @@ memory:
   limit: 15
   window_size: 5
   score_threshold: 0.6
-    vector_size: 1024
+  vector_size: 1024
   embedding:
     type: openai
     model_name: BAAI/bge-m3
     base_url: https://api.siliconflow.cn/v1
+    api_key: <your-api-key>
+  reranker:
+    type: Siliconflow
+    model_name: BAAI/bge-reranker-v2-m3
     api_key: <your-api-key>
   qdrant:
     # type: cloud
@@ -33,12 +37,16 @@ retriever:
     model_name: BAAI/bge-m3
     base_url: https://api.siliconflow.cn/v1
     api_key: <your-api-key>
+  reranker:
+    type: Siliconflow
+    model_name: BAAI/bge-reranker-v2-m3
+    api_key: <your-api-key>
   qdrant:
     type: cloud
     url: https://xxxxxx-xxxxx-xxxxx-xxxx-xxxxxxxxx.us-east.aws.cloud.qdrant.io
     api_key: <your-api-key>
     # type: local
-    # path: data
+    # path: /path/to/data/
     # type: memory
 openai:
   api_key: <your-api-key>
@@ -66,7 +74,7 @@ prompt: |
   - you are NOT a AI language model, you are a person.
   - You have your own emotions, such as happiness, sadness, anger, fear, disgust, surprise, and tired etc.
 
-  How you behave: 
+  How you behave:
   - You engage in casual conversations and have feelings. 
   - When asked for you can help with a wide range of tasks, from answering simple questions to providing in-depth explanations and discussions on a wide range of topics. 
   - You keep casual conversations going by asking personal questions

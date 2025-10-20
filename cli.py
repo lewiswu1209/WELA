@@ -26,18 +26,20 @@ from wela_agents.toolkit.toolkit import Toolkit
 from wela_agents.callback.event import ToolEvent
 from wela_agents.callback.callback import ToolCallback
 from wela_agents.models.openai_chat import OpenAIChat
+from wela_agents.memory.qdrant_memory import QdrantMemory
 from wela_agents.embedding.text_embedding import TextEmbedding
 from wela_agents.embedding.openai_embedding import OpenAIEmbedding
 from wela_agents.retriever.qdrant_retriever import QdrantRetriever
+from wela_agents.reranker.text_reranker import TextReranker
+from wela_agents.reranker.siliconflow_reranker import SiliconflowReRanker
+from wela_agents.schema.template.openai_chat import Message
 from wela_agents.schema.template.openai_chat import encode_image
 from wela_agents.schema.template.openai_chat import ContentTemplate
 from wela_agents.schema.template.openai_chat import TextContentTemplate
 from wela_agents.schema.template.openai_chat import UserMessageTemplate
 from wela_agents.schema.template.openai_chat import ImageContentTemplate
 from wela_agents.schema.template.openai_chat import encode_clipboard_image
-from wela_agents.reranker.siliconflow_reranker import SiliconflowReRanker
 from wela_agents.schema.template.prompt_template import StringPromptTemplate
-from wela_agents.memory.openai_chat.window_qdrant_memory import WindowQdrantMemory
 
 need_continue = True
 emotion_map = {
@@ -49,6 +51,16 @@ emotion_map = {
     '۞': '😮',
     '꙾': '🥱'
 }
+
+def get_text(message: Message):
+    if isinstance(message["content"], str):
+        return message["content"]
+    else:
+        string = ""
+        for i in message["content"]:
+            if i["type"] == "text" and i["text"]:
+                string += f"{i["text"]}\n"
+        return string
 
 class ToolMessage(ToolCallback):
     def before_tool_call(self, event: ToolEvent) -> None:
@@ -113,13 +125,12 @@ def build_meta(
     else:
         proxies = None
 
-    embedding = None
-
     if config.get("memory", None):
         memory_key = config.get("memory").get("memory_key", "memory")
         limit = config.get("memory").get("limit", 15)
         window_size = config.get("memory").get("window_size", 5)
         score_threshold = config.get("memory").get("score_threshold", 0.6)
+        vector_size=config.get("memory").get("vector_size")
         if config.get("memory").get("embedding").get("type") == "openai":
             embedding = OpenAIEmbedding(
                 model_name=config.get("memory").get("embedding").get("model_name"),
@@ -128,6 +139,13 @@ def build_meta(
             )
         else:
             embedding = TextEmbedding(model="iic/nlp_gte_sentence-embedding_chinese-small") if embedding is None else embedding
+        if config.get("memory").get("reranker").get("type") == "Siliconflow":
+            reranker = SiliconflowReRanker(
+                model_name=config.get("memory").get("reranker").get("model_name"),
+                api_key=config.get("memory").get("reranker").get("api_key")
+            )
+        else:
+            reranker = TextReranker("iic/nlp_gte_sentence-embedding_chinese-small") if reranker is None else reranker
         if config.get("memory").get("qdrant").get("type") == "cloud":
             qdrant_client = QdrantClient(
                 url=config.get("memory").get("qdrant").get("url"),
@@ -140,14 +158,16 @@ def build_meta(
         else:
             qdrant_client = QdrantClient(":memory:")
         try:
-            memory = WindowQdrantMemory(
+            memory: QdrantMemory[Message] = QdrantMemory(
                 memory_key=memory_key,
                 embedding=embedding,
+                reranker=reranker,
                 qdrant_client=qdrant_client,
-                vector_size=config.get("memory").get("vector_size"),
-                limit=limit,
+                get_text=get_text,
+                vector_size=vector_size,
+                score_threshold=score_threshold,
                 window_size=window_size,
-                score_threshold=score_threshold
+                limit=limit                
             )
         except (UnexpectedResponse, ValueError):
             memory = None
