@@ -6,6 +6,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Callable
+from urllib.parse import quote_plus
 
 from wela_agents.toolkit.toolkit import Tool
 from wela_agents.toolkit.tool_result import ToolResult
@@ -45,7 +46,7 @@ class GoogleSearch(Tool):
         self.__reranker = reranker
 
     def _invoke(self, callback: Callable = None, **kwargs: Any) -> str:
-        search_term = kwargs["search_term"]
+        search_term = quote_plus(kwargs["search_term"])
         topic_description = kwargs["topic_description"]
         try:
             hits = []
@@ -69,12 +70,12 @@ class GoogleSearch(Tool):
 
             scored_snippet_hits = self.__reranker.rerank(
                 query=topic_description,
-                documents=[hit["snippet"] for hit in hits]
+                documents=[hit.get("snippet", "none") for hit in hits]
             )
             scored_snippet_hits = sorted(scored_snippet_hits, key=lambda x: x["index"])
             scored_title_hits = self.__reranker.rerank(
                 query=topic_description,
-                documents=[hit["title"] for hit in hits]
+                documents=[hit.get("title", "none") for hit in hits]
             )
             scored_title_hits = sorted(scored_title_hits, key=lambda x: x["index"])
             results = []
