@@ -1,0 +1,54 @@
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wela_agent"
+version = "0.1.0"
+authors = [
+  { name="Lewis Wu", email="lewiswu1209@163.com" }
+]
+maintainers = [
+  { name="Lewis Wu", email="lewiswu1209@163.com" }
+]
+description = "It's wela itself."
+readme = "README.md"
+license = { file="LICENSE" }
+requires-python = ">=3.10"
+
+dependencies = [
+  "mcp",
+  "pyqt5",
+  "pyyaml",
+  "qasync",
+  "aiohttp",
+  "markdown",
+  "html2text",
+  "qdrant_client",
+  "readability-lxml",
+  "autogen-agentchat",
+  "autogen-ext[openai]"
+]
+
+[project.urls]
+Homepage = "https://github.com/lewiswu1209/WELA.git"
+Repository = "https://github.com/lewiswu1209/WELA.git"
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-cov",
+]
+dev = [
+  "setuptools",
+  "twine",
+  "build"
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["wela_agent"]

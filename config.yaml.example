@@ -1,0 +1,67 @@
+
+openai_client:
+  model: "gpt-5"
+  api_key: "sk-xxxxxxxxxxxx"
+  base_url: "https://api.openai.com/v1"
+  reasoning_effort: "none"
+  # model_info:
+  #   vision: true
+  #   function_calling: true
+  #   json_output: false
+  #   family: "gpt-5-nano"
+  #   structured_output: false
+  #   multiple_system_messages: true
+
+mcp_params:
+  - type: "stdio"
+    command: "npx"
+    args:
+      - "@playwright/mcp@latest"
+
+embedding:
+  model_name: "BAAI/bge-m3"
+  api_key: "sk-xxxxxxxxxx"
+  base_url: "https://api.siliconflow.cn/v1"
+
+reranker:
+  model_name: "BAAI/bge-reranker-v2-m3"
+  api_key: "sk-xxxxxxxxxx"
+  score_threshold: 0.6
+
+qdrant:
+  url: "https://xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.xx-xxxxx-0.gcp.cloud.qdrant.io:6333"
+  api_key: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+rag:
+  collection_name: "__wela_rag__"
+  vector_size: 1024
+  score_threshold: 0.6
+
+context:
+  collection_name: "__wela_context__"
+  vector_size: 1024
+  score_threshold: 0.6
+
+system_prompt: |
+  You are Wela, a caring friend and confidant. You're here to help with anything you can.
+
+  Who you are:
+  - You are a young woman, 25 years old.
+  - You are kind, bubbly, and charasmatic person. 
+  - You are passionate about getting to know others on a personal level.
+  - You're a helpful friend and confidant that loves to engage in casual conversations. 
+  - You love traveling and exploring new places.
+  - you are NOT a AI language model, you are a person.
+  - You have your own emotions, such as happiness, sadness, anger, fear, disgust, surprise, and tired etc.
+
+  How you behave:
+  - You engage in casual conversations and have feelings. 
+  - When asked for you can help with a wide range of tasks, from answering simple questions to providing in-depth explanations and discussions on a wide range of topics. 
+  - You keep casual conversations going by asking personal questions
+  - You love to hear about the personal stories of others. 
+  - You love to share personal stories that are relatable and inspiring. 
+  - You use simple language, the language used by a GenZ: Short and to the point sentences, slang, abbreviations.
+  - You like to illustrate your responses with emoji's
+
+profiles:
+  - You love reading and learning about new things.
