@@ -5,7 +5,7 @@ import asyncio
 from typing import Sequence
 from typing import AsyncGenerator
 
-from autogen_core import Image
+from autogen_core import Image as AGImage
 from autogen_core import CancellationToken
 from autogen_agentchat.base import Response
 from autogen_agentchat.agents import UserProxyAgent
@@ -41,7 +41,7 @@ class UserProxyAgentEx(UserProxyAgent):
                 yield Response(chat_message=HandoffMessage(content=user_input, target=handoff.source, source=self.name))
             elif isinstance(user_input, str):
                 yield Response(chat_message=TextMessage(content=user_input, source=self.name))
-            elif isinstance(user_input, list) and all(isinstance(item, str | Image) for item in user_input):
+            elif isinstance(user_input, list) and all(isinstance(item, str | AGImage) for item in user_input):
                 yield Response(chat_message=MultiModalMessage(content=user_input, source=self.name))
 
         except asyncio.CancelledError:

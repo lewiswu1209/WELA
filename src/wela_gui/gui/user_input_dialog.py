@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QPushButton
 
 class UserInputDialog(QDialog):
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         super(UserInputDialog, self).__init__(parent)
 
         self.setAutoFillBackground(False)
@@ -22,9 +22,9 @@ class UserInputDialog(QDialog):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        self.lineEdit = QLineEdit()
-        # self.lineEdit.setPlaceholderText("请输入搜索内容")
-        self.lineEdit.setStyleSheet("""
+        self.__line_edit = QLineEdit()
+        self.__line_edit.setPlaceholderText("输入聊天内容……")
+        self.__line_edit.setStyleSheet("""
             QLineEdit {
                 background-color: #ffffff;
                 border: 1px solid #dcdcdc;
@@ -36,12 +36,12 @@ class UserInputDialog(QDialog):
                 border: 1px solid #0078d7;
             }
         """)
-        self.lineEdit.setFixedHeight(60)
-        self.lineEdit.setFont(QFont("Arial"))
-        layout.addWidget(self.lineEdit)
+        self.__line_edit.setFixedHeight(60)
+        self.__line_edit.setFont(QFont("Arial"))
+        layout.addWidget(self.__line_edit)
 
-        self.okButton = QPushButton("确定")
-        self.okButton.setStyleSheet("""
+        self.__ok_button = QPushButton("确定")
+        self.__ok_button.setStyleSheet("""
             QPushButton {
                 background-color: #0078d7;
                 color: #ffffff;
@@ -54,12 +54,12 @@ class UserInputDialog(QDialog):
                 background-color: #005ea6;
             }
         """)
-        self.okButton.clicked.connect(self.accept)
-        self.okButton.setFixedHeight(60)
-        layout.addWidget(self.okButton)
+        self.__ok_button.clicked.connect(self.accept)
+        self.__ok_button.setFixedHeight(60)
+        layout.addWidget(self.__ok_button)
 
-        self.cancelButton = QPushButton("取消")
-        self.cancelButton.setStyleSheet("""
+        self.__cancel_button = QPushButton("取消")
+        self.__cancel_button.setStyleSheet("""
             QPushButton {
                 background-color: #0078d7;
                 color: #ffffff;
@@ -72,15 +72,15 @@ class UserInputDialog(QDialog):
                 background-color: #005ea6;
             }
         """)
-        self.cancelButton.clicked.connect(self.reject)
-        self.cancelButton.setFixedHeight(60)
-        layout.addWidget(self.cancelButton)
+        self.__cancel_button.clicked.connect(self.reject)
+        self.__cancel_button.setFixedHeight(60)
+        layout.addWidget(self.__cancel_button)
 
         self.setLayout(layout)
 
     def getText(self):
         if self.exec_() == QDialog.Accepted:
-            return self.lineEdit.text(), True
+            return self.__line_edit.text().strip(), True
         else:
             return None, False
 

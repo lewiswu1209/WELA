@@ -1,7 +1,10 @@
 
 from typing import List
+from typing import Union
 
-class Whiteboard(List):
+from autogen_core import Image as AGImage
+
+class Whiteboard(List[Union[str, AGImage]]):
     pass
 
 __all__ = [

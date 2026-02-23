@@ -1,5 +1,4 @@
 
-import markdown
 import webbrowser
 
 from PyQt5.QtGui import QFont
@@ -41,7 +40,7 @@ class ReplyWindow(QWidget):
 
     def start_hide_timer(self, min_msec: int = 3000) -> None:
         text_length = len( self.__text_edit.toPlainText() )
-        reading_time = text_length / (300 / 60000)
+        reading_time = (text_length / 250) * 60000
         reading_time = int(reading_time)
 
         msec = max(reading_time, min_msec)
@@ -81,10 +80,8 @@ class ReplyWindow(QWidget):
         self.setFixedHeight(int(fixed_height) + self.layout().spacing() * 4)
         self.setFixedWidth(int(fixed_width) + self.layout().spacing() * 4)
 
-    def set_contents(self, text: str) -> None:
-        text = text.replace("<think>", "<span style='color: #FF4500;'>").replace("</think>", "</span>")
-        html = markdown.markdown(text)
-        self.__text_edit.setHtml(html)
+    def set_markdown(self, markdown: str) -> None:
+        self.__text_edit.setMarkdown(markdown)
 
         scrollbar = self.__text_edit.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())

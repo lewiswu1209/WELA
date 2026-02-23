@@ -18,17 +18,9 @@ license = { file="LICENSE" }
 requires-python = ">=3.10"
 
 dependencies = [
-  "mcp",
-  "pyqt5",
-  "pyyaml",
-  "qasync",
-  "aiohttp",
-  "markdown",
-  "html2text",
-  "qdrant_client",
-  "readability-lxml",
   "autogen-agentchat",
-  "autogen-ext[openai]"
+  "autogen-ext[openai]",
+  "PyGetWindow"
 ]
 
 [project.urls]
@@ -36,9 +28,14 @@ Homepage = "https://github.com/lewiswu1209/WELA.git"
 Repository = "https://github.com/lewiswu1209/WELA.git"
 
 [project.optional-dependencies]
-test = [
-    "pytest",
-    "pytest-cov",
+cli = [
+  "windows-curses",
+  "autogen-ext[mcp]"
+]
+gui = [
+  "PyQt5",
+  "qasync",
+  "autogen-ext[mcp]"
 ]
 dev = [
   "setuptools",
