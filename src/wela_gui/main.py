@@ -26,14 +26,15 @@ from autogen_ext.code_executors.local import LocalCommandLineCodeExecutor
 from autogen_ext.tools.mcp import McpWorkbench, SseServerParams
 
 from wela_gui.gui import AssistantAvatar
+from wela_gui.gui.trigger import Trigger
 from wela_agent.wela import Wela
 from wela_agent.tools import GetWeatherTool
 from wela_agent.tools import GoogleSearchTool
 from wela_agent.tools import WriteTextFileTool
 from wela_agent.tools import ScreenShotTool
 from wela_agent.tools import SetAlarmClockTool
-from wela_agent.memory.session_metadata import SessionMeta
-from wela_gui.gui.trigger import Trigger
+from wela_agent.memory import SessionMeta
+from wela_agent.context import WelaChatCompletionContext
 
 async def Console(
     stream: AsyncGenerator[BaseAgentEvent | BaseChatMessage | TaskResult, None],
@@ -97,6 +98,7 @@ def main():
                 )
             )
         ],
+        model_context=WelaChatCompletionContext(),
         system_prompt="""You are Wela, a caring friend and confidant. You're here to help with anything you can.
 
 Who you are:
