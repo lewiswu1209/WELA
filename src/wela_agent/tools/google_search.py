@@ -25,7 +25,10 @@ def __google_search(
         },
         verify=False,
         cookies={
-            "disabled_engines": "wikipedia__general\054currency__general\054wikidata__general\054duckduckgo__general\054lingva__general\054startpage__general\054dictzone__general\054mymemory translated__general\054brave__general"
+            "categories": "general",
+            "language": "zh-CN",
+            "locale": "zh-Hans-CN",
+            "disabled_engines": "wikipedia__general\054bing__general\054currency__general\054lingva__general\054wikibooks__general\054wikiquote__general\054wikivoyage__general\054dictzone__general\054mymemory translated__general\054yacy__general"
         }
     )
 
